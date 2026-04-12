@@ -122,7 +122,21 @@
                 </table>
             </div>
         </div>
-
+<section id="progress-admin">
+    <h2>Student Qirath Progress</h2>
+    <table border="10px" style="width:100%; border-collapse: collapse; margin-top: 20px; text-align: left;">
+        <thead style="background: #1b5e20; color: white;">
+            <tr>
+                <th style="padding: 10px;">Student Name</th>
+                <th style="padding: 10px;">Level</th>
+                <th style="padding: 10px;">Progress Detail</th>
+                <th style="padding: 10px;">Time Sent</th>
+            </tr>
+        </thead>
+        <tbody id="adminProgressTable">
+            </tbody>
+    </table>
+</section>
        <div id="uploadSection" class="card" style="display:none;">
     <h3><i class="fa fa-file-upload"></i> Upload Resources</h3><br>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -360,6 +374,33 @@ window.onload = function() {
 
 // 4. uploadResource() keessattis dhumarratti renderResources() waami
 // Akka inni akkuma fe'ameen gabatee irratti mul'atuuf
+function loadStudentProgress() {
+    const tableBody = document.getElementById('adminProgressTable');
+    const allProgress = JSON.parse(localStorage.getItem('studentProgress')) || [];
+
+    tableBody.innerHTML = ""; // Kan duraan jiru qulqulleessuuf
+
+    if (allProgress.length === 0) {
+        tableBody.innerHTML = "<tr><td colspan='4' style='text-align:center; padding:10px;'>No progress reports yet.</td></tr>";
+        return;
+    }
+
+    // Ragaa hunda table keessa galchuuf
+    allProgress.reverse().forEach(data => { // Inni haaraa gubbaatti akka dhuquuf
+        const row = `
+            <tr style="border-bottom: 1px solid #ddd;">
+                <td style="padding: 10px;">${data.student}</td>
+                <td style="padding: 10px;">Level ${data.level}</td>
+                <td style="padding: 10px;">${data.detail}</td>
+                <td style="padding: 10px; font-size: 0.8rem; color: #666;">${data.timestamp}</td>
+            </tr>
+        `;
+        tableBody.innerHTML += row;
+    });
+}
+
+// Admin Dashboard gaafa banamu ragaa akka fiduuf
+window.onload = loadStudentProgress;
     </script>
 </body>
 </html>

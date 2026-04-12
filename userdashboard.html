@@ -638,6 +638,40 @@ if (logoutButton) {
         }
     };
 }
+function submitToAdmin() {
+    const level = document.getElementById('levelSelect').value;
+    const detail = document.getElementById('progressDetail').value;
+    const statusMsg = document.getElementById('statusMsg');
+    const currentUser = localStorage.getItem('currentUser') || "Unknown User";
+
+    if (!detail.trim()) {
+        statusMsg.style.color = "red";
+        statusMsg.innerText = "Please, describe what you have completed!";
+        return;
+    }
+
+    // Ragaa bifa Table-tiif dhiyaatu qopheessuu
+    const newEntry = {
+        student: currentUser,
+        level: level,
+        detail: detail,
+        timestamp: new Date().toLocaleString()
+    };
+
+    // localStorage irraa ragaa jiru fiduu
+    let allProgress = JSON.parse(localStorage.getItem('studentProgress')) || [];
+    
+    // Ragaa haaraa itti dabaluu
+    allProgress.push(newEntry);
+    
+    // Deebisanii save gochuu
+    localStorage.setItem('studentProgress', JSON.stringify(allProgress));
+
+    // Milkaa'ina beeksisuu
+    statusMsg.style.color = "green";
+    statusMsg.innerText = "Sent successfully!";
+    document.getElementById('progressDetail').value = "";
+}
 </script>
 </body>
 </html>
