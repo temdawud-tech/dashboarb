@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AUWCMSJ | Portal Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            min-height: 100vh; 
+            padding: 20px;
+        }
+
+        /* FIXED: Wrapped your properties into the correct selector */
+        .login-card { 
+            background: rgba(255, 255, 255, 0.95);
+            width: 100%;
+            max-width: 400px;
+            border-radius: 20px;
+            padding: 35px; 
+            text-align: center; 
+             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .top-logo-container img { width: 90px; height: 90px; border-radius: 50%; border: 3px solid #059669; margin-bottom: 10px; }
+        .top-logo-container h1 { font-size: 24px; color: #064e3b; margin-bottom: 5px; }
+        .title-section p { font-size: 13px; color: #475569; margin-bottom: 25px; }
+    
+        .notice-box {
+            background-color: #fee2e2; color: #b91c1c; padding: 12px;
+            border-radius: 10px; font-size: 13px; margin-bottom: 20px;
+            display: none; border-left: 5px solid #b91c1c;
+            text-align: left;
+        }
+
+        .input-group { position: relative; margin-bottom: 15px; }
+        .input-group i.main-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #059669; }
+        .input-group input {
+            width: 100%; padding: 14px 45px;
+            border: 1.5px solid #cbd5e1; border-radius: 12px; outline: none; transition: 0.3s;
+        }
+        .input-group input:focus { border-color: #059669; box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1); }
+
+        .password-toggle { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #64748b; }
+        
+        .login-btn {
+            width: 100%; background-color: #059669; color: white;
+            padding: 14px; border: none; border-radius: 12px;
+            font-size: 17px; font-weight: 600; cursor: pointer; margin-bottom: 15px; transition: 0.3s;
+        }
+        .login-btn:hover { background-color: #047857; transform: translateY(-2px); }
+
+        .signup-text { font-size: 13px; color: #64748b; }
+        .signup-text a { color: #059669; text-decoration: none; font-weight: 700; }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="top-logo-container">
+            <img src="logo.jpg" alt="Logo">
+            <h1>AUWCMSJ</h1>
+        </div>
+        <div class="title-section">
+            <p>Jema'a Portal Login</p>
+        </div>
+        
+        <div id="notice-box" class="notice-box"></div>
+
+        <form onsubmit="handleLogin(event)">
+            <div class="input-group">
+                <i class="fa-solid fa-user main-icon"></i>
+                <input type="text" id="userId" placeholder="ID Number (AU/123/15)" required>
+            </div>
+            <div class="input-group">
+                <i class="fa-solid fa-lock main-icon"></i>
+                <input type="password" id="passwordField" placeholder="Password" required>
+                <i class="fa-solid fa-eye password-toggle" id="toggleIcon" onclick="togglePassword()"></i>
+            </div>
+            <button type="submit" id="loginBtn" class="login-btn">Login</button>
+        </form>
+        <p class="signup-text">Don't have an account? <a href="register.html">Sign Up (Register Now)</a></p>
+    </div>
+
+    <script>
+        function togglePassword() {
+            const field = document.getElementById('passwordField');
+            const icon = document.getElementById('toggleIcon');
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                field.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const notice = document.getElementById('notice-box');
+            const btn = document.getElementById('loginBtn');
+            
+            const inputId = document.getElementById('userId').value.trim().toUpperCase();
+            const inputPass = document.getElementById('passwordField').value.trim();
+
+            const savedId = localStorage.getItem('userId');
+            const savedPass = localStorage.getItem('userPassword');
+            const status = localStorage.getItem('adminStatus'); 
+
+            btn.innerText = "Checking...";
+            notice.style.display = "none";
+
+            setTimeout(() => {
+                btn.innerText = "Login";
+
+                if (!savedId) {
+                    showError("Your record was not found. Please register first.");
+                } 
+                else if (inputId !== savedId.toUpperCase() || inputPass !== savedPass) {
+                    showError("Your ID or Password is incorrect!");
+                } 
+                else if (status === 'pending') {
+                    showError("Please wait! An admin needs to approve your registration.");
+                } 
+                else {
+                    sessionStorage.setItem('isLoggedIn', 'true');
+                    sessionStorage.setItem('activeUser', inputId);
+                    window.location.href = 'dashboard.html';
+                }
+            }, 800);
+        }
+
+        function showError(msg) {
+            const notice = document.getElementById('notice-box');
+            notice.style.display = "block";
+            notice.innerHTML = `<b>Notice:</b> ${msg}`;
+        }
+    </script>
+</body>
+</html>

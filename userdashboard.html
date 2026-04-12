@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="om">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AUWCMSJ Next-Gen Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* --- 1. GLOBAL STYLES --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        html { scroll-behavior: smooth; }
+        body {background-color: white; display: flex; flex-direction: column; min-height: 100vh; }
+        :root { --primary: #1b5e20; }
+
+        /* --- 2. HEADER WITH DAILY AYAH & PROFILE --- */
+        .top-nav {
+            background-image: linear-gradient(rgba(27, 94, 32, 0.85), rgba(27, 94, 32, 0.85)), url('image_8073fa.png');
+            background-size: cover;
+            background-position: center;
+            height: 185px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1100;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        
+
+        .header-top-row {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            position: absolute;
+            top: 15px;
+            padding: 0 25px;
+        }
+
+        .logo-menu-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .header-logo { display: flex; align-items: center; gap: 10px; }
+        .logopic { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.3); }
+        .menu-icon { font-size: 22px; cursor: pointer; padding-left: 5px; transition: 0.3s; }
+        .menu-icon:hover { color: #4caf50; }
+        
+        .right-side { flex: 1; display: flex; justify-content: flex-end; }
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #5c5f6b;
+            padding: 4px 12px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .profile-pic { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1.5px solid #4caf50; }
+        .username { font-size: 0.9rem; font-weight: 600; }
+        .logo-ayah { font-size: smaller; color: white;}
+  /* 1. Container Animation: Subtle floating motion */
+    .ayah-content {
+        max-width: auto;
+        margin: 20px auto;
+        padding: 20px;
+        text-align: center;
+        border-radius: 15px;
+        background: none;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        animation: float 4s ease-in-out infinite;
+    }
+
+    /* 2. Text Animation: Fade and slide up */
+    .ayah-content h2, .ayah-content p {
+        opacity: 0;
+        animation: fadeInUp 1s ease-out forwards;
+    }
+
+    .ayah-content p {
+        animation-delay: 0.5s; /* Delay the translation slightly */
+    }
+
+    /* 3. Dhikr Tag Animation: Pulsing glow */
+    .dhikr-tag {
+        margin-top: 20px;
+        padding: 10px;
+        background-color: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 8px;
+        color: #166534;
+        font-weight: bold;
+        animation: pulseGlow 2s infinite;
+    }
+
+    /* --- Keyframe Definitions --- */
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes pulseGlow {
+        0% { box-shadow: 0 0 0 0 rgba(187, 247, 208, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(187, 247, 208, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(187, 247, 208, 0); }
+    }
+
+        /* --- 3. SIDEBAR NAVIGATION --- */
+        .sidebar {
+            width: 260px;
+            height: 100vh;
+            background-color: #1b5e20;
+            color: white;
+            position: fixed;
+            left: -260px;
+            top: 0;
+            padding: 190px 20px 20px;
+            transition: 0.3s ease;
+            z-index: 1200; /* Higher than header */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar.active { left: 0; }
+        .nav-links { list-style: none; flex-grow: 1; overflow-y: auto; }
+        .nav-links li { margin-bottom: 8px; }
+        .nav-links a { 
+            color: rgba(255,255,255,0.8); 
+            text-decoration: none; 
+            display: flex; 
+            align-items: center; 
+            padding: 12px; 
+            border-radius: 8px; 
+            transition: 0.3s; 
+        }
+        .nav-links a i { margin-right: 15px; width: 20px; text-align: center; }
+        .nav-links a:hover, .nav-links a.active { background: rgba(255,255,255,0.1); color: white; }
+
+        /* --- 4. MAIN CONTENT --- */
+        .main-content { padding: 225px 40px 40px; width: 100%; transition: 0.3s; flex: 1; }
+        .section { margin-bottom: 60px; scroll-margin-top: 220px; }
+        .section-header { margin-bottom: 25px; border-left: 5px solid #1b5e20; padding-left: 15px; }
+
+        .grid-cards { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); 
+            gap: 25px; 
+        }
+        .card {background: hsl(207, 15%, 88%); padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: center; }
+        .card i { font-size: 1.8rem; color: #1b5e20; margin-bottom: 12px; }
+         .card { 
+            background: hsl(207, 15%, 88%); 
+            padding: 35px 25px; 
+            border-radius: 24px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.03); 
+            text-align: center; 
+            transition: 0.4s; 
+            border: 1px solid #f0f0f0;
+            position: relative;
+            overflow: hidden;
+        }
+          .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 5px;
+            background: var(--primary);
+            transform: scaleX(0);
+            transition: 0.4s;
+        }
+
+        .card:hover { 
+            transform: translateY(-12px); 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+            border-color: var(--primary);
+        }
+        
+        .card:hover::before { transform: scaleX(1); }
+
+        .card i { 
+            font-size: 2.2rem; 
+            color: var(--primary); 
+            margin-bottom: 20px; 
+            background: #f1f8e9;
+            width: 70px;
+            height: 70px;
+            line-height: 70px;
+            border-radius: 20px;
+            display: inline-block;
+            transition: 0.3s;
+        }
+        
+        .card:hover i { 
+            background: var(--primary); 
+            color: white; 
+            transform: rotateY(360deg);
+        }
+
+        .card h3 { font-size: 1.2rem; margin-bottom: 12px; font-weight: 700; }
+        .card p { font-size: 0.9rem; color: #666; line-height: 1.6; }
+         @media (max-width: 768px) {
+            .main-content { padding: 250px 20px 20px; }
+            .top-nav { height: 180px; }
+            .ayah-content h2 { font-size: 1.5rem; }
+        }
+        
+        /* --- PRAYER TIMES STYLES --- */
+        .prayer-container {background: hsl(207, 15%, 88%);  padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: center; }
+        .prayer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; margin-top: 20px; }
+        .prayer-box { background:  #5c5f6b; padding: 15px; border-radius: 8px; border-bottom: 4px solid #1b5e20; transition: 0.3s; }
+        .prayer-box h4 { color: #1b5e20; font-size: 0.85rem; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        .prayer-box p { font-weight: bold; font-size: 1.2rem; color: #333; }
+        .hijri-display { color: #666; margin-bottom: 10px; font-weight: 600; font-size: 1rem; }
+        .location-tag { font-size: 0.8rem; color: #1b5e20; margin-bottom: 15px; display: block; }
+
+        /* Stats & Roadmap */
+        .stats-container {background: hsl(207, 15%, 88%);  padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .bar-wrapper { background: #eee; height: 20px; border-radius: 10px; margin: 10px 0 20px; overflow: hidden; }
+        .bar { height: 100%; background: #1b5e20; }
+        .roadmap-track { display: flex; justify-content: space-between; position: relative; padding: 20px 0; }
+        .roadmap-track::before { content: ''; position: absolute; top: 40px; width: 100%; height: 3px;background:rgba(255, 255, 255, 0.596); 
+ z-index: 1; }
+        .step { position: relative; background: #87918e; padding: 0 10px; z-index: 2; text-align: center; }
+        .circle { width: 40px; height: 40px; border-radius: 50%; background: #1b5e20; color: rgb(175, 169, 169); line-height: 40px; margin: 0 auto 10px; font-weight: bold; }
+
+        /* --- 5. MODERN FOOTER --- */
+        .main-footer { background-color: #1b5e20; color: white; padding: 50px 40px 20px; margin-top: 40px; }
+        .footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; max-width: 1200px; margin: 0 auto; }
+        .footer-col h4 { font-size: 1.2rem; margin-bottom: 20px; position: relative; padding-bottom: 10px; }
+        .footer-col h4::after { content: ''; position: absolute; left: 0; bottom: 0; width: 40px; height: 2px; background-color: #4caf50; }
+        .footer-col p, .footer-col ul { font-size: 0.9rem; color: rgba(255,255,255,0.7); line-height: 1.6; list-style: none; }
+        .footer-col ul li { margin-bottom: 10px; }
+        .footer-col ul li a { color: inherit; text-decoration: none; transition: 0.3s; }
+        .footer-col ul li a:hover { color: white; padding-left: 5px; }
+        .social-links { display: flex; gap: 15px; margin-top: 20px; }
+        .social-links a { width: 38px; height: 38px; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; border-radius: 50%; color: white; text-decoration: none; transition: 0.3s; }
+        .social-links a:hover { background: #4caf50; transform: translateY(-3px); }
+        .footer-bottom { text-align: center; padding-top: 30px; margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.8rem; color: rgba(255,255,255,0.5); }
+
+        @media (max-width: 768px) {
+            .main-content { padding: 225px 20px 20px; }
+            .username { display: none; }
+            .roadmap-track { flex-direction: column; gap: 30px; }
+            .roadmap-track::before { display: none; }
+        }
+ /* User section hunda mirga gubbaatti hiriirsuuf */
+.user-profile-wrapper {
+    position: absolute; /* Header keessatti mirgatti dhiibuuf */
+    top: 15px;
+    right: 20px;
+    display: flex;
+    flex-direction: column; /* Profile gubbaa, Logout jala */
+    align-items: center;
+    gap: 5px;
+}
+
+.profile-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 5px 12px;
+    border-radius: 50px;
+}
+
+.profile-circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid white;
+}
+
+.profile-name {
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* Logout Button Profile jala jiru */
+.logout-small-btn {
+    background: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: 0.3s;
+}
+
+.logout-small-btn:hover {
+    background: #cc0000;
+}/* Jalqaba irratti listii dhoksuuf */
+.file-list-container {
+    display: none; 
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 8px;
+}
+
+/* Card-ichi akka tuqamu danda'u beeksisuuf */
+.card {
+    cursor: pointer;
+}
+
+/* Gaafa 'active' ta'u akka banamu */
+.file-list-container.show {
+    display: block;
+}
+ 
+
+    </style>
+</head>
+<body>
+
+    <header class="top-nav">
+        <div class="header-top-row">
+            <div class="logo-menu-container">
+                <div class="header-logo">
+                    <img src="logo.jpg" alt="Logo" class="logopic">
+                    <h3>AUWCMSJ</h3>
+                </div>
+                <div class="menu-icon" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
+            </div>
+
+        </div>
+        
+       <div class="ayah-content">
+    <h2 dir="rtl">وَقُل رَّبِّ زِدْنِي عِلْمًا</h2>
+    <p class="logo-ayah">"And say, 'My Lord, increase me in knowledge.'"</p>
+    <div class="logo-ayah">🤲 DAILY DHIKR: 100x Astaghfirullah 🤲</div>
+</div>
+<div class="user-profile-wrapper">
+    <div class="profile-main">
+        <img src="profile.png" alt="dawe" class="profile-circle">
+        <span class="profile-name">dawe</span>
+    </div>
+
+    <button id="logoutBtn" class="logout-small-btn">
+        <i class="fas fa-sign-out-alt"></i> Logout
+    </button>
+</div>
+    </header>
+
+    <nav class="sidebar" id="sidebar">
+        <ul class="nav-links">
+            <li><a href="#about" onclick="toggleSidebar()"><i class="fas fa-info-circle"></i> <span>About Jema'aa</span></a></li>
+            <li><a href="#prayer" onclick="toggleSidebar()"><i class="fas fa-clock"></i> <span>Prayer Times</span></a></li>
+            <li><a href="#library" onclick="toggleSidebar()"><i class="fas fa-book"></i> <span>Digital Library</span></a></li>
+            <li><a href="#stats" onclick="toggleSidebar()"><i class="fas fa-chart-bar"></i> <span>Statistics</span></a></li>
+            <li><a href="#roadmap" onclick="toggleSidebar()"><i class="fas fa-map-marked-alt"></i> <span>Qirath Roadmap</span></a></li>
+            <li><a href="#contact" onclick="toggleSidebar()"><i class="fas fa-envelope"></i> <span>Contact</span></a></li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <div id="newsDisplay" style="background: #fff9c4; padding: 15px; border-left: 5px solid #fbc02d; margin-bottom: 20px; border-radius: 8px; font-weight: bold; color: #333; line-height: 1.5;">
+    Beeksisni ammaan tana hin jiru.
+</div>
+        <section id="about" class="section">
+            <div class="section-header"><h1>About AUWCMSJ</h1></div>
+            <div class="grid-cards">
+                <div class="card"><i class="fas fa-history"></i><h3>History</h3><p>Serving since 2015</p></div>
+                <div class="card"><i class="fas fa-bullseye"></i><h3>Mission</h3><p>Excellence & Faith</p></div>
+                <div class="card"><i class="fas fa-hand-holding-heart"></i><h3>Services</h3><p>Student Support</p></div>
+                <div class="card"><i class="fas fa-gavel"></i><h3>Rules</h3><p>Jema'aa Ethics</p></div>
+            </div>
+        </section>
+        
+
+        <section id="prayer" class="section">
+            <div class="section-header"><h1>Prayer Times</h1></div>
+            <div class="prayer-container">
+                <span id="loc-status" class="location-tag">Detecting location...</span>
+                <p class="hijri-display" id="hijri-date">-- -- ---- AH</p>
+                <div class="prayer-grid">
+                    <div class="prayer-box"><h4>Fajr</h4><p id="fajr">--:--</p></div>
+                    <div class="prayer-box"><h4>Dhuhr</h4><p id="dhuhr">--:--</p></div>
+                    <div class="prayer-box"><h4>Asr</h4><p id="asr">--:--</p></div>
+                    <div class="prayer-box"><h4>Maghrib</h4><p id="maghrib">--:--</p></div>
+                    <div class="prayer-box"><h4>Isha</h4><p id="isha">--:--</p></div>
+                </div>
+            </div>
+        </section>
+
+       <section id="library" class="section">
+    <div class="section-header"><h1>Digital Library</h1></div>
+    
+    <div class="grid-cards">
+        <div class="card">
+            <i class="fas fa-university"></i>
+            <h3>Academic</h3>
+            <div id="list-academic" class="file-list-container">
+                <p style="font-size: 12px; color: #888;">Kitaabni hin jiru...</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <i class="fas fa-mosque"></i>
+            <h3>Religious</h3>
+            <div id="list-religious" class="file-list-container">
+                <p style="font-size: 12px; color: #888;">Kitaabni hin jiru...</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <i class="fas fa-book-open"></i>
+            <h3>General</h3>
+            <div id="list-general" class="file-list-container">
+                <p style="font-size: 12px; color: #888;">Kitaabni hin jiru...</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+        <section id="stats" class="section">
+            <div class="section-header"><h1>Jema'aa Statistics</h1></div>
+            <div class="stats-container">
+                <p>Male Students (608)</p>
+                <div class="bar-wrapper"><div class="bar" style="width: 57%;"></div></div>
+                <p>Female Students (450)</p>
+                <div class="bar-wrapper"><div class="bar" style="width: 43%; background: #66bb6a;"></div></div>
+            </div>
+        </section>
+        
+<section id="roadmap" class="section">
+    <div class="section-header"><h1>Qirath Progress Update</h1></div>
+    
+    <div class="roadmap-track">
+        <div class="step"><div id="disp-step-1" class="circle">1</div><p>Basic</p></div>
+        <div class="step"><div id="disp-step-2" class="circle" style="background:#1b5e20;">2</div><p>Intermediate</p></div>
+        <div class="step"><div id="disp-step-3" class="circle" style="background: #1b5e20;">3</div><p>Advanced</p></div>
+    </div>
+
+    <div class="update-box" style="  background: hsl(207, 15%, 88%);  padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-top: 30px;">
+        <h3 style="color: #1b5e20; margin-bottom: 15px;">Submit Your Progress</h3>
+        
+        <label>Select Level:</label>
+        <select id="levelSelect" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px;">
+            <option value="1">Basic (Noorani Qaida / Short Surahs)</option>
+            <option value="2">Intermediate (Juz 1 - Juz 15)</option>
+            <option value="3">Advanced (Juz 16 - Juz 30)</option>
+        </select>
+
+        <label>Describe your progress (e.g., "I finished Surah Al-Baqarah"):</label>
+        <textarea id="progressDetail" placeholder="Write exactly what you have completed..." style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; height: 80px;"></textarea>
+
+        <button onclick="submitToAdmin()" id="submitBtn" style="width: 100%; padding: 12px; background: #1b5e20; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+            Send to Admin 
+        </button>
+        <p id="statusMsg" style="margin-top: 10px; font-size: 0.85rem; color: #666;"></p>
+    </div>
+</section>
+    </main>
+
+    <footer class="main-footer" id="contact">
+        <div class="footer-grid">
+            <div class="footer-col">
+                <h4>AUWCMSJ</h4>
+                <p>Ambo University Woliso Campus Muslim Students Jema'aa. Building a strong community through faith and knowledge.</p>
+                <div class="social-links">
+    <a href="https://t.me/waliso235" target="_blank" rel="noopener noreferrer" aria-label="Telegram">
+        <i class="fab fa-telegram" aria-hidden="true"></i>
+    </a>
+    
+    <a href="https://www.facebook.com/YourPage" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+        <i class="fab fa-facebook" aria-hidden="true"></i>
+    </a>
+    
+    <a href="https://www.youtube.com/@YourChannel" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+        <i class="fab fa-youtube" aria-hidden="true"></i>
+    </a>
+</div>
+            </div>
+            
+            <div class="footer-col">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="#about">About Us</a></li>
+                    <li><a href="#prayer">Prayer Times</a></li>
+                    <li><a href="#library">Digital Library</a></li>
+                    <li><a href="#stats">Statistics</a></li>
+                    <li><a href="#roadmap">Qirath Roadmap</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Contact Info</h4>
+                <ul>
+                    <li><i class="fas fa-map-marker-alt"></i> Woliso, Ethiopia</li>
+                    <li><i class="fas fa-envelope"></i> info@auwcm.com</li>
+                    <li><i class="fas fa-phone"></i> +251712363603</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 AUWCMSJ | Developed by AUWCMSJ DEVELOPERS | All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        document.querySelector('.main-content').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.remove('active');
+        });
+</script>
+
+<script>
+        window.onload = function() {
+    // 1. PROFILE & NEWS 
+    const currentUser = localStorage.getItem('currentUser') || "dawe";
+    if (document.querySelector('.profile-name')) {
+        document.querySelector('.profile-name').innerText = currentUser;
+    }
+
+    const news = localStorage.getItem('adminNews');
+    const newsDisplay = document.getElementById('newsDisplay');
+    if (news && newsDisplay) {
+        newsDisplay.innerText = news;
+    }
+
+    // 2. LIBRARY LOGIC (Accordion Style)
+    const resources = JSON.parse(localStorage.getItem('resources')) || [];
+    const lists = {
+        'Academic': document.getElementById('list-academic'),
+        'Religious': document.getElementById('list-religious'),
+        'General': document.getElementById('list-general')
+    };
+
+    // Ragaa durii qulqulleessuu
+    Object.values(lists).forEach(list => { if (list) list.innerHTML = ""; });
+
+    if (resources.length > 0) {
+        resources.forEach(res => {
+            const listTarget = lists[res.category];
+            if (listTarget) {
+                listTarget.innerHTML += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px; margin-top: 8px; border-radius: 8px; border: 1px solid #eee;">
+                        <span style="font-size: 13px; color: #333; font-weight: 600;">${res.title}</span>
+                        <a href="${res.data}" download="${res.title}" style="color: #1b5e20;">
+                            <i class="fas fa-download"></i>
+                        </a>
+                    </div>`;
+            }
+        });
+    } else {
+         // Yoo kitaabni hin jirre
+         Object.values(lists).forEach(list => { 
+            if(list) list.innerHTML = '<p style="font-size: 12px; color: #888;">Kitaabni hin jiru.</p>'; 
+         });
+    }
+
+    // 3. CLICK TO SHOW/HIDE (ACCORDION)
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            // Yoo download button tuqan akka hin cufamneef
+            if (e.target.closest('a')) return;
+
+            const listContainer = this.querySelector('.file-list-container');
+            if (listContainer) {
+                listContainer.classList.toggle('show');
+            }
+        });
+    });
+
+    // 4. PRAYER TIMES FIDUU
+    fetchPrayerTimes();
+};
+
+// --- KUNNIIN JALATTI HAFACHUU QABU ---
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('active');
+}
+
+async function fetchPrayerTimes() {
+    try {
+        const res = await fetch(`https://api.aladhan.com/v1/timingsByCity?city=Woliso&country=Ethiopia&method=3`);
+        const json = await res.json();
+        const t = json.data.timings;
+        const h = json.data.date.hijri;
+        
+        if(document.getElementById('fajr')) {
+            document.getElementById('fajr').innerText = t.Fajr;
+            document.getElementById('dhuhr').innerText = t.Dhuhr;
+            document.getElementById('asr').innerText = t.Asr;
+            document.getElementById('maghrib').innerText = t.Maghrib;
+            document.getElementById('isha').innerText = t.Isha;
+            document.getElementById('hijri-date').innerText = `${h.day} ${h.month.en} ${h.year} AH`;
+        }
+    } catch (e) {
+        console.log("Error fetching prayer times");
+    }
+}
+// LOGOUT SYSTEM
+const logoutButton = document.getElementById('logoutBtn');
+
+if (logoutButton) {
+    logoutButton.onclick = function(e) {
+        e.preventDefault(); // Akka linkiin ofiin hin kaanne dhorkuuf
+        
+        const confirmLogout = confirm("Are you sure?");
+        if (confirmLogout) {
+            // Ragaa user-aa login godhe localStorage irraa haquu
+            localStorage.removeItem('currentUser');
+            
+            // Gara fulwara Login-tti deebisuu
+            window.location.href = "login.html"; 
+        }
+    };
+}
+</script>
+</body>
+</html>
