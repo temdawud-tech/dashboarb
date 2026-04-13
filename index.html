@@ -11,17 +11,8 @@
         body { display: flex; background: #f0f2f5; min-height: 100vh; }
         
         /* Sidebar */
-        
-/* --- 1. GLOBAL SIDEBAR (Hundumaaf) --- */
-.sidebar {
-    width: 260px;
-    background-color: #1b5e20;
-    color: white;
-    transition: 0.3s ease;
-    overflow-y: auto; /* Kutaaleen akka Dark Mode akka hin dhokanneef */
-    display: flex;
-    flex-direction: column;
-}        .sidebar h2 { font-size: 20px; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+        .sidebar { width: 260px; background: #064e3b; color: white; padding: 25px; position: fixed; height: 100%; transition: 0.3s; }
+        .sidebar h2 { font-size: 20px; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
         .nav-item { padding: 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; border-radius: 8px; transition: 0.3s; margin-bottom: 5px; }
         .nav-item:hover { background: rgba(255,255,255,0.1); }
         .active-nav { background: #059669; }
@@ -67,49 +58,33 @@
         .badge-active { background: #dcfce7; color: #166534; }
         .badge-pending { background: #fef3c7; color: #92400e; }
 
-        /* --- 2. PC IRRATTI (Screen bal'aa) --- */
-@media (min-width: 992px) {
-    .sidebar {
+        @media (max-width: 768px) {
+            .sidebar { width: 0; padding: 0; overflow: hidden; }
+            .main { margin-left: 0; width: 100%; }
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+        /* Bilbila irratti akka dhokatuuf CSS kana dabaladhu */
+@media (max-width: 768px) {
+    .sidebar { 
+        left: -260px; /* Jalqaba ni dhokata */
+    }
+    .sidebar.active { 
+        left: 0; /* Hamburger yoo tuqame ni mul'ata */
+    }
+    .hamburger-btn {
+        display: block !important; /* Bilbila irratti qofa mul'ata */
         position: fixed;
-        left: 0;
-        top: 0;
-        height: 100vh;
-        z-index: 1000;
-    }
-
-    .main-content {
-        margin-left: 260px; /* PC irratti content-ichi sidebaara akka hin dhiphisne */
-        width: calc(100% - 260px);
-    }
-
-    .menu-icon {
-        display: none; /* PC irratti hamburger-ri hin barbaachisu */
-    }
-}/* --- 3. BILBILA IRRATTI (Screen xiqqaa) --- */
-@media (max-width: 991px) {
-    .sidebar {
-        position: fixed;
-        left: -260px; /* Jalqaba irratti ni dhokata */
-        top: 0;
-        height: 100vh;
-        z-index: 2000; /* Hunda gubbaa akka ta'u */
-    }
-
-    .sidebar.active {
-        left: 0; /* Hamburger gaafa tuqame dhufa */
-    }
-
-    .main-content {
-        margin-left: 0;
-        width: 100%;
-        padding-top: 200px; /* Header-riin akka content hin dhoksine */
-    }
-
-    .menu-icon {
-        display: block; /* Bilbila irratti qofa mul'ata */
+        top: 15px;
+        left: 15px;
+        background: #064e3b;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 5px;
         cursor: pointer;
+        z-index: 1100;
     }
 }
+
 /* Computer irratti akka hin mul'anneef */
 .hamburger-btn { display: none; }
     </style>
@@ -119,9 +94,10 @@
     <script>
         sessionStorage.setItem('isLoggedIn', 'true');
         sessionStorage.setItem('userRole', 'admin');
-    </script> 
-<div class="menu-icon" onclick="toggleSidebar()">
-    <i class="fas fa-bars"></i>
+    </script>
+
+   <div class="hamburger-btn" onclick="toggleMenu()">
+    <i class="fa fa-bars"></i>
 </div>
 
 <div class="sidebar" id="mySidebar">
@@ -483,38 +459,29 @@ function toggleMenu() {
     document.getElementById("mySidebar").classList.toggle("active");
 }
 function exportToCSV() {
-    // 1. Ragaa 'users' jedhu mirkaneessi
-    if (!users || users.length === 0) {
+    if (users.length === 0) {
         alert("Ragaan download godhamu hin jiru!");
         return;
     }
-
-    // 2. Mata-duree Table-ii
+    
+    // Mata-duree column-oota Excel
     let csvContent = "Student ID,Full Name,Status\n";
     
-    // 3. Ragaa barattootaa guutuu
+    // Ragaa barattootaa hunda sararaa sararaan dabaluu
     users.forEach(user => {
         csvContent += `${user.studentId},${user.name},${user.status}\n`;
     });
 
-    // 4. BOM (Byte Order Mark) - Kun PC fi Mobile-f murteessaa dha
-    const BOM = "\uFEFF";
-    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-
-    // 5. Download Logic
+    // Fayila CSV uumuu
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    
     link.setAttribute("href", url);
-    link.setAttribute("download", "AUWCMSJ_Data_Report.csv");
-    link.style.visibility = 'hidden';
-    
+    link.setAttribute("download", "AUWCMSJ_Students.csv"); // Maqaa fayilaa
     document.body.appendChild(link);
-    link.click(); // Ofumaan download jalqaba
-    document.body.removeChild(link);
     
-    // Memory qulqulleessuuf
-    setTimeout(() => URL.revokeObjectURL(url), 100);
+    link.click(); // Ofumaan akka download godhu
+    document.body.removeChild(link);
 }
 window.onload = function() {
     renderData();           // Barattoota fida
