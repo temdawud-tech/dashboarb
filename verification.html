@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="om">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AUWC - Registration Success</title>
+    <style>
+        /* 1. Background & Layout */
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            padding: 15px;
+        }
+
+        /* 2. Success Card */
+        .success-card {
+            background: rgba(255, 255, 255, 0.692);
+            width: 100%;
+            max-width: 420px;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            padding: 30px;
+            text-align: center;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* 3. Top Progress (All Verified) */
+        .status-steps {
+            display: flex;
+            justify-content: space-between;
+            font-size: 35px;
+            text-align: center;
+            font-weight: bold;
+            color: #10b981; /* Green */
+            margin-bottom: 20px;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 10px;
+        }
+
+        /* 4. Logo & Icon Area */
+        .logo-box { margin-bottom: 15px; }
+        .logo-box img { width: 50px; }
+        .logo-title {
+            font-weight: 900;
+            color: #065f46;
+            font-size: 14px;
+        }
+
+        .success-icon {
+            font-size: 60px;
+            color: #065f46;
+            margin: 20px 0;
+        }
+
+        /* 5. Text Content */
+        .thanks-msg {
+            font-size: 16px;
+            font-weight: 900;
+            color: #1e293b;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .user-name {
+            color: #065f46;
+            display: block;
+            margin-top: 5px;
+        }
+
+        .info-text {
+            font-size: 11px;
+            color: #475569;
+            line-height: 1.6;
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            margin: 15px 0;
+        }
+
+        .contact-info {
+            font-weight: bold;
+            color: #0f172a;
+        }
+
+        /* 6. Footer Links */
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            font-size: 10px;
+            color: #94a3b8;
+            margin-top: 20px;
+        }
+
+        .footer-links a {
+            color: #065f46;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        /* Animation for clock */
+        .animate-spin-slow {
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="success-card">
+        <div class="status-steps">
+            <span> Account (✔)</span>
+        </div>
+
+        <div class="logo-box">
+            <div class="logo-title">AUWCMSJ</div>
+        </div>
+
+        <h2 class="thanks-msg">
+            THANK YOU FOR REGISTERING,
+            <span class="user-name">[Student's Name]</span>
+        </h2>
+
+        <div class="success-icon animate-spin-slow">🕒</div>
+
+        <div class="info-text">
+            Your Jema'a application has been submitted successfully and is currently under review by our Admin team. This process typically takes up to <b>24 hours</b>. 
+            <br><br>
+            A notification will be sent to your registered <span class="contact-info">Email Address</span> and <span class="contact-info">Phone Number</span> once your account is active.
+            <br><br>
+            Please note: Full access to the student dashboard and features will be unlocked after activation.
+        </div>
+
+        <div class="footer-links">
+            <a href="#">Dashboard Overview</a>
+            <span>|</span>
+            <a href="#">Help & Support</a>
+        </div>
+    </div>
+<script src="script.js"></script>
+</body>
+</html>

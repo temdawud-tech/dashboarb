@@ -212,282 +212,46 @@
     </div>
 
     <script>
-        let users = JSON.parse(localStorage.getItem('users')) || [];
-
-        function renderData() {
-            const list = document.getElementById('userList');
-            list.innerHTML = "";
-            users.forEach((user) => {
-                list.innerHTML += `
-                    <tr>
-                        <td><b>${sanitize(user.studentId)}</b></td>
-                        <td>${sanitize(user.name)}</td>
-                        <td><span class="badge ${user.status === 'active' ? 'badge-active' : 'badge-pending'}">${user.status}</span></td>
-                        <td style="display:flex; gap:5px;">
-                            ${user.status === 'pending' ? `<button class="btn btn-primary" style="padding:4px 8px;" onclick="approve('${user.studentId}')">Approve</button>` : '✅'}
-                            <button class="btn btn-export" style="padding:4px 8px; background:#64748b;" onclick="resetUserPassword('${user.studentId}')">
-                                <i class="fa fa-redo"></i> Reset
-                            </button>
-                            <button class="btn btn-danger" onclick="deleteUser('${user.studentId}')"><i class="fa fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `;
-            });
-            updateAnalytics();
-        }
-
-        function searchTable() {
-            let val = document.getElementById('searchInput').value.toUpperCase();
-            let rows = document.querySelectorAll('#userList tr');
-            rows.forEach(row => {
-                row.style.display = row.innerText.toUpperCase().includes(val) ? "" : "none";
-            });
-        }
-
-        function approve(id) {
-            users = users.map(u => u.studentId === id ? {...u, status: 'active'} : u);
-            saveAndRefresh();
-        }
-
-        function deleteUser(id) {
-            if (confirm("Delete this student?")) {
-                users = users.filter(u => u.studentId !== id);
-                saveAndRefresh();
-            }
-        }
-
-        function resetUserPassword(id) {
-            let newPass = prompt("New password for " + id + ":");
-            if (newPass && newPass.length >= 4) {
-                users = users.map(u => u.studentId === id ? {...u, password: newPass} : u);
-                saveAndRefresh();
-                alert("Password updated!");
-            }
-        }
-
-        function addNewUser() {
-            let id = document.getElementById('newId').value.trim();
-            let name = document.getElementById('newName').value.trim();
-            if (id && name) {
-                users.push({ studentId: id, name: name, status: 'active', password: 'password123' });
-                saveAndRefresh();
-                document.getElementById('newId').value = "";
-                document.getElementById('newName').value = "";
-                toggleAddUser();
-                alert("Student added!");
-            }
-        }
-
-        function showUsers() {
-            document.getElementById('uploadSection').style.display = 'none';
-            document.getElementById('addUserSection').style.display = 'none';
-            renderData();
-        }
-
-        function saveAndRefresh() {
-            localStorage.setItem('users', JSON.stringify(users));
-            renderData();
-        }
-
-        function updateAnalytics() {
-            document.getElementById('count-total').innerText = users.length;
-            document.getElementById('count-active').innerText = users.filter(u => u.status === 'active').length;
-            document.getElementById('count-pending').innerText = users.filter(u => u.status === 'pending').length;
-        }
-
-        function sanitize(str) {
-            let temp = document.createElement('div');
-            temp.textContent = str;
-            return temp.innerHTML;
-        }
-
-        function toggleAddUser() {
-            let sec = document.getElementById('addUserSection');
-            sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
-        }
-
-        function toggleUpload() {
-            let sec = document.getElementById('uploadSection');
-            sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
-        }
-
-        function uploadResource() {
-    let title = document.getElementById('resourceTitle').value;
-    let category = document.getElementById('resourceCategory').value;
-    let file = document.getElementById('fileInput').files[0];
-    
-    if (title && file) {
-        let reader = new FileReader();
-        reader.onload = function(e) {
-            let resources = JSON.parse(localStorage.getItem('resources')) || [];
-            resources.push({ 
-                title: title, 
-                category: category, 
-                fileName: file.name, 
-                data: e.target.result, // File-icha gara text-itti jijjiira
-                date: new Date().toLocaleDateString() 
-            });
-            localStorage.setItem('resources', JSON.stringify(resources));
-            alert("✅ File-ichi gara kutaa " + category + " fe'ameera!");
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-        function changeAdminPassword() {
-            let oldPass = document.getElementById('oldPass').value;
-            let newPass = document.getElementById('newAdminPass').value;
-            let current = localStorage.getItem('adminPassword') || 'dawe123';
-            if (oldPass === current && newPass.length >= 6) {
-                localStorage.setItem('adminPassword', newPass);
-                alert("Admin password updated!");
-            } else { alert("Error: Check old password or length."); }
-        }
-
-        function toggleDarkMode() { document.body.classList.toggle('dark-theme'); }
-        function logout() { sessionStorage.clear(); window.location.href = 'login.html'; }
-        function updateNews() { localStorage.setItem('adminNews', document.getElementById('newsContent').value); alert("News Updated!"); }
-
-        window.onload = renderData;
-        // 1. Fayiloota fe'aman gabatee keessatti agarsiisuu
-function renderResources() {
-    const list = document.getElementById('adminResourceList');
-    const resources = JSON.parse(localStorage.getItem('resources')) || [];
-    
-    if (list) {
-        list.innerHTML = ""; // Jalqaba qulqulleessi
-        resources.forEach((res, index) => {
+        // Function kana script keessatti bakka buusi
+async function loadStudents() {
+    try {
+        const res = await fetch('http://localhost:5000/api/admin/students');
+        const students = await res.json();
+        
+        const list = document.getElementById('userList');
+        if (!list) return; // Yoo 'userList' hin jirre dhaabi
+        
+        list.innerHTML = "";
+        students.forEach(user => {
             list.innerHTML += `
                 <tr>
-                    <td><b>${res.title}</b></td>
-                    <td><span class="badge badge-active">${res.category}</span></td>
-                    <td>${res.fileName}</td>
+                    <td><b>${user.studentId}</b></td>
+                    <td>${user.name}</td>
+                    <td><span class="badge ${user.status === 'active' ? 'badge-active' : 'badge-pending'}">${user.status}</span></td>
                     <td>
-                        <button class="btn btn-danger" onclick="deleteResource(${index})">
-                            <i class="fa fa-trash"></i> Delete
-                        </button>
+                        ${user.status === 'pending' ? 
+                          `<button class="btn btn-primary" onclick="approveStudent('${user.studentId}')">Approve</button>` : 
+                          '✅'}
                     </td>
-                </tr>
-            `;
+                </tr>`;
         });
+    } catch (err) {
+        console.error("Ragaa fiduun hin danda'amne:", err);
     }
 }
-
-// 2. Fayila barbaadame qofa haquu
-function deleteResource(index) {
-    if (confirm("Fayila kana haquu barbaadduu?")) {
-        let resources = JSON.parse(localStorage.getItem('resources')) || [];
-        
-        // Fayila index sana irratti argamu qofa keessaa baasi
-        resources.splice(index, 1);
-        
-        // Deebisii save godhi
-        localStorage.setItem('resources', JSON.stringify(resources));
-        
-        // Gabatee irratti deebisii agarsiisi
-        renderResources();
-        alert("Fayilli haqameera!");
-    }
-}
-
-// 3. window.onload keessatti renderResources() waami
-const originalOnload = window.onload;
-window.onload = function() {
-    if (originalOnload) originalOnload();
-    renderResources();
-};
-
-// 4. uploadResource() keessattis dhumarratti renderResources() waami
-function loadStudentProgress() {
-    const tableBody = document.getElementById('adminProgressTable');
-    const allProgress = JSON.parse(localStorage.getItem('studentProgress')) || [];
-    tableBody.innerHTML = ""; 
-
-    if (allProgress.length === 0) {
-        tableBody.innerHTML = "<tr><td colspan='5' style='text-align:center; padding:10px;'>Gabaasni hin jiru.</td></tr>";
-        return;
-    }
-
-    // Ergaa hunda fiduuf
-    allProgress.forEach((data, index) => {
-        const row = `
-            <tr style="border-bottom: 1px solid #ddd;">
-                <td style="padding: 10px;">${data.student}</td>
-                <td style="padding: 10px;">Level ${data.level}</td>
-                <td style="padding: 10px;">${data.detail}</td>
-                <td style="padding: 10px;">${data.timestamp}</td>
-                <td style="padding: 10px;">
-                    <button class="btn btn-danger" onclick="deleteProgress(${index})">
-                        <i class="fa fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
-        `;
-        tableBody.innerHTML += row;
+async function approveStudent(id) {
+    const res = await fetch(`http://localhost:5000/api/admin/approve/${id}`, {
+        method: 'PUT'
     });
-}
-function deleteProgress(index) {
-    if (confirm("Gabaasa kana balleessuu barbaadduu?")) {
-        let allProgress = JSON.parse(localStorage.getItem('studentProgress')) || [];
-        
-        // Index sana qofa array keessaa kuta
-        allProgress.splice(index, 1);
-        
-        // Gara madda ragaatti (LocalStorage) deebisee kuusa
-        localStorage.setItem('studentProgress', JSON.stringify(allProgress));
-        
-        // Fuula dashboard irratti hatattamaan akka haqamu gochuuf
-        loadStudentProgress();
+    if (res.ok) {
+        alert("Barataa mirkanaa'eera!");
+        loadStudents(); // Gabatee deebisii refresh godhi
     }
 }
-function toggleManageResources() {
-    // Kutaalee biroo cufi
-    document.getElementById('uploadSection').style.display = 'none';
-    document.getElementById('addUserSection').style.display = 'none';
-    
-    // Manage Resources akka mul'atu godhi
-    const resSection = document.getElementById('adminResourceList').closest('.card');
-    if (resSection.style.display === 'none' || resSection.style.display === '') {
-        resSection.style.display = 'block';
-        renderResources(); // Ragaa akka fiduuf
-    } else {
-        resSection.style.display = 'none';
-    }
-}
-function toggleMenu() {
-    // Sidebar-ichi akka class 'active' jedhu argatu ykn dhabu godha
-    document.getElementById("mySidebar").classList.toggle("active");
-}
-function exportToCSV() {
-    if (users.length === 0) {
-        alert("Ragaan download godhamu hin jiru!");
-        return;
-    }
-    
-    // Mata-duree column-oota Excel
-    let csvContent = "Student ID,Full Name,Status\n";
-    
-    // Ragaa barattootaa hunda sararaa sararaan dabaluu
-    users.forEach(user => {
-        csvContent += `${user.studentId},${user.name},${user.status}\n`;
-    });
 
-    // Fayila CSV uumuu
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", "AUWCMSJ_Students.csv"); // Maqaa fayilaa
-    document.body.appendChild(link);
-    
-    link.click(); // Ofumaan akka download godhu
-    document.body.removeChild(link);
-}
-window.onload = function() {
-    renderData();           // Barattoota fida
-    loadStudentProgress();  // Progress fida
-    renderResources();      // Resource-oota fida
-};
+// Fuulli yeroo banamu akka waamamuuf
+window.onload = loadStudents;
+
 
     </script>
 </body>

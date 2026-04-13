@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="om">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 2: Emergency & Family Contacts</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; padding: 20px;
+        }
+        .form-card {
+            background: rgba(255, 255, 255, 0.9);
+            width: 100%; max-width: 550px;
+            border-radius: 12px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .step-tabs { background: #065f46; color: white; text-align: center; padding: 15px; border-radius: 8px; margin-bottom: 25px; }
+        .section-title { font-size: 15px; font-weight: 800; color: #114ba7; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px; margin: 15px 0; }
+        .form-row { display: flex; align-items: center; margin-bottom: 12px; }
+        .form-row label { width: 140px; font-size: 13px; font-weight: 700; color: #334155; }
+        .input-field { flex: 1; padding: 10px; border: 2px solid #cbd5e1; border-radius: 6px; outline: none; transition: 0.3s; }
+        
+        /* Restriction style */
+        .input-field.invalid { border-color: #b91c1c; background-color: #fff1f1; }
+        
+        .helper-text { font-size: 11px; color: #64748b; margin-top: -8px; margin-bottom: 12px; margin-left: 140px; font-style: italic; }
+
+        .button-group { 
+            display: flex; 
+            gap: 15px; 
+            justify-content: space-between; 
+            margin-top: 30px; 
+        }
+        .btn { padding: 12px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; border: none; transition: 0.3s; }
+        
+        .btn-back { background: #64748b; color: white; flex: 1; }
+        .btn-next { background: #065f46; color: white; flex: 2; }
+
+        .btn-back:hover { background: #475569; }
+        .btn-next:hover { background: #047857; }
+
+        @media (max-width: 480px) {
+            .form-row { flex-direction: column; align-items: flex-start; }
+            .helper-text { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="form-card">
+    <div class="step-tabs"><h2>Family & Emergency Contacts</h2></div>
+    <form id="step2Form">
+        <div class="section-title">Emergency Contact (Local)</div>
+        <div class="form-row">
+            <label for="eName">Full Name</label>
+            <input type="text" id="eName" class="input-field" oninput="this.classList.remove('invalid')">
+        </div>
+        <div class="form-row">
+            <label for="ePhone">Phone Number</label>
+            <input type="tel" id="ePhone" class="input-field" oninput="this.classList.remove('invalid')">
+        </div>
+        <div class="form-row">
+            <label for="eRelationship">Relationship</label>
+            <input type="text" id="eRelationship" class="input-field" oninput="this.classList.remove('invalid')">
+        </div>
+        <p class="helper-text">Reach this person in case of campus emergency.</p>
+
+        <div class="section-title">Family Contact (Home)</div>
+        <div class="form-row">
+            <label for="fName">Full Name</label>
+            <input type="text" id="fName" class="input-field" oninput="this.classList.remove('invalid')">
+        </div>
+        <div class="form-row">
+            <label for="fPhone">Phone Number</label>
+            <input type="tel" id="fPhone" class="input-field" oninput="this.classList.remove('invalid')">
+        </div>
+        <div class="form-row">
+            <label for="fRelationship">Relationship</label>
+            <input type="text" id="fRelationship" class="input-field" oninput="this.classList.remove('invalid')">
+        </div>
+        
+        <div class="button-group">
+            <button type="button" class="btn btn-back" onclick="goBack()">Back</button>
+            <button type="button" class="btn btn-next" onclick="checkAndGo()">Next Step</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Logic to navigate to the previous page
+    function goBack() {
+        window.history.back();
+    }
+
+    // Logic to validate inputs and move forward to skill.html
+    function checkAndGo() {
+        const form = document.getElementById('step2Form');
+        const inputs = form.querySelectorAll('.input-field');
+        let allValid = true;
+
+        inputs.forEach(input => {
+            if (input.value.trim() === "") {
+                input.classList.add('invalid');
+                allValid = false;
+            }
+        });
+
+        if (allValid) {
+            // This will now move the user to skill.html
+            window.location.href = "skill.html"; 
+        } else {
+            alert("Maaloo hunda isaa guuti!");
+        }
+    }
+</script>
+</body>
+</html>

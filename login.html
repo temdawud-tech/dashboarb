@@ -90,58 +90,42 @@
     </div>
 
     <script>
-        function togglePassword() {
-            const field = document.getElementById('passwordField');
-            const icon = document.getElementById('toggleIcon');
-            if (field.type === 'password') {
-                field.type = 'text';
-                icon.classList.replace('fa-eye', 'fa-eye-slash');
-            } else {
-                field.type = 'password';
-                icon.classList.replace('fa-eye-slash', 'fa-eye');
-            }
-        }
+      <script>
+    async function login() {
+        // Iddoo input keetii ragaa fiduuf (IDs: studentId fi password)
+        const studentId = document.getElementById('studentId').value;
+        const password = document.getElementById('password').value;
 
-        function handleLogin(event) {
-            event.preventDefault();
-            const notice = document.getElementById('notice-box');
-            const btn = document.getElementById('loginBtn');
-            
-            const inputId = document.getElementById('userId').value.trim().toUpperCase();
-            const inputPass = document.getElementById('passwordField').value.trim();
+        try {
+            const res = await fetch('http://localhost:5000/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ studentId, password })
+            });
 
-            const savedId = localStorage.getItem('userId');
-            const savedPass = localStorage.getItem('userPassword');
-            const status = localStorage.getItem('adminStatus'); 
+            const data = await res.json();
 
-            btn.innerText = "Checking...";
-            notice.style.display = "none";
+            if (res.ok && data.token) {
+                // Token fi ragaalee biroo yeroof kuusuuf
+                sessionStorage.setItem('token', data.token);
+                sessionStorage.setItem('userName', data.name);
+                sessionStorage.setItem('role', data.role);
 
-            setTimeout(() => {
-                btn.innerText = "Login";
-
-                if (!savedId) {
-                    showError("Your record was not found. Please register first.");
-                } 
-                else if (inputId !== savedId.toUpperCase() || inputPass !== savedPass) {
-                    showError("Your ID or Password is incorrect!");
-                } 
-                else if (status === 'pending') {
-                    showError("Please wait! An admin needs to approve your registration.");
-                } 
-                else {
-                    sessionStorage.setItem('isLoggedIn', 'true');
-                    sessionStorage.setItem('activeUser', inputId);
-                    window.location.href = 'dashboard.html';
+                // Gara Dashboard tti dabarsuuf
+                if (data.role === 'admin') {
+                    window.location.href = 'admindashboard.html';
+                } else {
+                    window.location.href = 'userdashboard.html';
                 }
-            }, 800);
+            } else {
+                alert(data.error || "Login hin milkoofne!");
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Backend kee hin jiru (Server Check)!");
         }
-
-        function showError(msg) {
-            const notice = document.getElementById('notice-box');
-            notice.style.display = "block";
-            notice.innerHTML = `<b>Notice:</b> ${msg}`;
-        }
+    }
+</script>
     </script>
 </body>
 </html>

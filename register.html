@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="om">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AUWC Registration - General Info</title>
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- 1. GLOBAL STYLES --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; padding: 20px;
+        }
+
+        .form-card {
+            background: rgba(255, 255, 255, 0.9);
+            width: 100%; max-width: 550px;
+            border-radius: 15px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            padding: 40px; border: 1px solid #e2e8f0;
+        }
+
+        .header { text-align: center; margin-bottom: 25px; }
+        .header img { width: 80px; height: auto; margin-bottom: 10px; border-radius: 50%; }
+        .header h2 { font-size: 20px; color: #064e3b; font-weight: 700; letter-spacing: 0.5px; }
+
+        .form-row { display: flex; align-items: center; margin-bottom: 18px; position: relative; }
+        .form-row label { width: 130px; font-size: 13px; font-weight: 700; color: #334155; }
+
+        .input-field {
+            flex: 1; padding: 12px;
+            border: 2px solid #cbd5e1; border-radius: 8px;
+            font-size: 14px; color: #1e293b; outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-field.error { border-color: #b91c1c; background-color: #fff1f1; }
+        .input-field:focus { border-color: #065f46; box-shadow: 0 0 0 4px rgba(6, 95, 70, 0.1); }
+
+        .footer-note {
+            text-align: center; font-size: 12px; color: #475569;
+            margin: 20px 0; line-height: 1.4;
+        }
+
+        /* --- BUTTONS SIDE BY SIDE --- */
+        .button-group { 
+            display: flex; 
+            gap: 15px; 
+            justify-content: space-between; 
+            margin-top: 10px; 
+        }
+
+        .btn {
+            padding: 14px 20px; border-radius: 10px;
+            font-size: 16px; font-weight: 700;
+            cursor: pointer; border: none; transition: 0.3s;
+        }
+
+        .btn-back { background: #64748b; color: white; flex: 1; }
+        .btn-next { background: #065f46; color: white; flex: 2; }
+
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        @media (max-width: 480px) {
+            .form-row { flex-direction: column; align-items: flex-start; }
+            .form-row label { margin-bottom: 5px; }
+            .button-group { flex-direction: column-reverse; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-card">
+        <div class="header">
+            <img src="logo.jpg" alt="AUWC Logo">
+            <h2>STUDENT REGISTRATION FORM</h2>
+        </div>
+
+        <div class="form-content">
+            <form id="registrationForm">
+                <div class="form-row">
+                    <label>Full Name</label>
+                    <input id="fullName" type="text" class="input-field" placeholder="Full name" oninput="this.classList.remove('error')">
+                </div>
+
+                <div class="form-row">
+                    <label>University ID</label>
+                    <input id="universityId" type="text" class="input-field" placeholder="AU/123/15" oninput="this.classList.remove('error')">
+                </div>
+
+                <div class="form-row">
+                    <label>Department</label>
+                    <input id="department" type="text" class="input-field" placeholder="e.g., IT" oninput="this.classList.remove('error')">
+                </div>
+
+                <div class="form-row">
+                    <label>Year of Entry</label>
+                    <input id="yearOfEntry" type="text" class="input-field" placeholder="2015" oninput="this.classList.remove('error')">
+                </div>
+
+               <div class="form-row">
+    <label for="gender">Gender</label> 
+    <select id="gender" class="input-field" onchange="this.classList.remove('error')">
+        <option value="">Select Gender</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+    </select>
+</div>
+
+                <div class="form-row">
+                    <label>Phone Number</label>
+                    <input id="phoneNumber" type="tel" class="input-field" placeholder="09xxxxxxxx" oninput="this.classList.remove('error')">
+                </div>
+
+                <p class="footer-note">Hubachiisa: Bakka duwwaa hunda guutuun dirqama.</p>
+
+                <div class="button-group">
+                    <button type="button" class="btn btn-back" onclick="goBack()">Back</button>
+                    <button type="button" class="btn btn-next" onclick="validateAndSave()">Next</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        async function register() {
+    const studentId = document.getElementById('newId').value;
+    const name = document.getElementById('newName').value;
+    const password = document.getElementById('newPass').value;
+
+    const res = await fetch('http://localhost:5000/api/register', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ studentId, name, password })
+    });
+
+    const data = await res.json();
+    if(res.ok) {
+        alert("Galmeen milkaa'eera! Admin akka siif mirkaneessu eegi.");
+        window.location.href = 'login.html';
+    } else {
+        alert(data.error);
+    }
+}
+    </script>
+</body>
+</html>
