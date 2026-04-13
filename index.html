@@ -63,6 +63,30 @@
             .main { margin-left: 0; width: 100%; }
             .stats-grid { grid-template-columns: 1fr; }
         }
+        /* Bilbila irratti akka dhokatuuf CSS kana dabaladhu */
+@media (max-width: 768px) {
+    .sidebar { 
+        left: -260px; /* Jalqaba ni dhokata */
+    }
+    .sidebar.active { 
+        left: 0; /* Hamburger yoo tuqame ni mul'ata */
+    }
+    .hamburger-btn {
+        display: block !important; /* Bilbila irratti qofa mul'ata */
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        background: #064e3b;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 1100;
+    }
+}
+
+/* Computer irratti akka hin mul'anneef */
+.hamburger-btn { display: none; }
     </style>
 </head>
 <body>
@@ -72,15 +96,19 @@
         sessionStorage.setItem('userRole', 'admin');
     </script>
 
-    <div class="sidebar">
-        <h2><i class="fa fa-shield-halved"></i> AUWCMSJ Admin</h2>
-        <div class="nav-item active-nav"><i class="fa fa-home"></i> Dashboard</div>
-        <div class="nav-item" onclick="toggleUpload()"><i class="fa fa-file-pdf"></i> Upload Resources</div>
-        <div class="nav-item" onclick="showUsers()"><i class="fa fa-users"></i> Students</div>
-        <div class="nav-item" onclick="toggleDarkMode()"><i class="fa fa-moon"></i> Dark Mode</div>
-       <div class="nav-item" onclick="toggleManageResources()"><i class="fa fa-folder-open"></i>   Manage Resources</div>
-        <div class="nav-item" style="margin-top: 50px;" onclick="logout()"><i class="fa fa-sign-out-alt"></i> Logout</div>
-    </div>
+   <div class="hamburger-btn" onclick="toggleMenu()">
+    <i class="fa fa-bars"></i>
+</div>
+
+<div class="sidebar" id="mySidebar">
+    <h2><i class="fa fa-shield-halved"></i> AUWCMSJ Admin</h2>
+    <div class="nav-item active-nav"><i class="fa fa-home"></i> Dashboard</div>
+    <div class="nav-item" onclick="toggleUpload(); toggleMenu();"><i class="fa fa-file-pdf"></i> Upload Resources</div>
+    <div class="nav-item" onclick="showUsers(); toggleMenu();"><i class="fa fa-users"></i> Students</div>
+    <div class="nav-item" onclick="toggleDarkMode()"><i class="fa fa-moon"></i> Dark Mode</div>
+    <div class="nav-item" onclick="toggleManageResources(); toggleMenu();"><i class="fa fa-folder-open"></i> Manage Resources</div>
+    <div class="nav-item" style="margin-top: 50px;" onclick="logout()"><i class="fa fa-sign-out-alt"></i> Logout</div>
+</div>
 
     <div class="main">
         <div class="stats-grid">
@@ -125,14 +153,14 @@
 <section id="progress-admin">
     <h2>Student Qirath Progress</h2>
     <table border="10px" style="width:100%; border-collapse: collapse; margin-top: 20px; text-align: left;">
-        <thead style="background: #1b5e20; color: white;">
-            <tr>
-                <th style="padding: 10px;">Student Name</th>
-                <th style="padding: 10px;">Level</th>
-                <th style="padding: 10px;">Progress Detail</th>
-                <th style="padding: 10px;">Time Sent</th>
-            </tr>
-        </thead>
+     <thead style="background: #1b5e20; color: white;">
+    <tr>
+        <th style="padding: 10px;">Student Name</th>
+        <th style="padding: 10px;">Level</th>
+        <th style="padding: 10px;">Progress Detail</th>
+         <th style="padding: 10px;">Time Sent</th>
+        <th style="padding: 10px;">Action</th> </tr>
+</thead>
         <tbody id="adminProgressTable">
             </tbody>
     </table>
@@ -153,8 +181,7 @@
     </div>
     <div id="uploadStatus" style="margin-top:10px; color: #059669;"></div>
 </div>
-        <div class="card">
-    <h3><i class="fa fa-folder-open"></i> Manage Resources</h3><br>
+       <div class="card" id="manageResourcesCard" style="display:none;"> <h3><i class="fa fa-folder-open"></i> Manage Resources</h3><br>
     <div style="overflow-x: auto;">
         <table>
             <thead>
@@ -165,9 +192,7 @@
                     <th>Action</th>
                 </tr>
             </thead>
-            <tbody id="adminResourceList">
-                </tbody>
-        </table>
+            <tbody id="adminResourceList"></tbody> </table>
     </div>
 </div>
         <div class="card">
@@ -373,34 +398,97 @@ window.onload = function() {
 };
 
 // 4. uploadResource() keessattis dhumarratti renderResources() waami
-// Akka inni akkuma fe'ameen gabatee irratti mul'atuuf
 function loadStudentProgress() {
     const tableBody = document.getElementById('adminProgressTable');
     const allProgress = JSON.parse(localStorage.getItem('studentProgress')) || [];
-
-    tableBody.innerHTML = ""; // Kan duraan jiru qulqulleessuuf
+    tableBody.innerHTML = ""; 
 
     if (allProgress.length === 0) {
-        tableBody.innerHTML = "<tr><td colspan='4' style='text-align:center; padding:10px;'>No progress reports yet.</td></tr>";
+        tableBody.innerHTML = "<tr><td colspan='5' style='text-align:center; padding:10px;'>Gabaasni hin jiru.</td></tr>";
         return;
     }
 
-    // Ragaa hunda table keessa galchuuf
-    allProgress.reverse().forEach(data => { // Inni haaraa gubbaatti akka dhuquuf
+    // Ergaa hunda fiduuf
+    allProgress.forEach((data, index) => {
         const row = `
             <tr style="border-bottom: 1px solid #ddd;">
                 <td style="padding: 10px;">${data.student}</td>
                 <td style="padding: 10px;">Level ${data.level}</td>
                 <td style="padding: 10px;">${data.detail}</td>
-                <td style="padding: 10px; font-size: 0.8rem; color: #666;">${data.timestamp}</td>
+                <td style="padding: 10px;">${data.timestamp}</td>
+                <td style="padding: 10px;">
+                    <button class="btn btn-danger" onclick="deleteProgress(${index})">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </td>
             </tr>
         `;
         tableBody.innerHTML += row;
     });
 }
+function deleteProgress(index) {
+    if (confirm("Gabaasa kana balleessuu barbaadduu?")) {
+        let allProgress = JSON.parse(localStorage.getItem('studentProgress')) || [];
+        
+        // Index sana qofa array keessaa kuta
+        allProgress.splice(index, 1);
+        
+        // Gara madda ragaatti (LocalStorage) deebisee kuusa
+        localStorage.setItem('studentProgress', JSON.stringify(allProgress));
+        
+        // Fuula dashboard irratti hatattamaan akka haqamu gochuuf
+        loadStudentProgress();
+    }
+}
+function toggleManageResources() {
+    // Kutaalee biroo cufi
+    document.getElementById('uploadSection').style.display = 'none';
+    document.getElementById('addUserSection').style.display = 'none';
+    
+    // Manage Resources akka mul'atu godhi
+    const resSection = document.getElementById('adminResourceList').closest('.card');
+    if (resSection.style.display === 'none' || resSection.style.display === '') {
+        resSection.style.display = 'block';
+        renderResources(); // Ragaa akka fiduuf
+    } else {
+        resSection.style.display = 'none';
+    }
+}
+function toggleMenu() {
+    // Sidebar-ichi akka class 'active' jedhu argatu ykn dhabu godha
+    document.getElementById("mySidebar").classList.toggle("active");
+}
+function exportToCSV() {
+    if (users.length === 0) {
+        alert("Ragaan download godhamu hin jiru!");
+        return;
+    }
+    
+    // Mata-duree column-oota Excel
+    let csvContent = "Student ID,Full Name,Status\n";
+    
+    // Ragaa barattootaa hunda sararaa sararaan dabaluu
+    users.forEach(user => {
+        csvContent += `${user.studentId},${user.name},${user.status}\n`;
+    });
 
-// Admin Dashboard gaafa banamu ragaa akka fiduuf
-window.onload = loadStudentProgress;
+    // Fayila CSV uumuu
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "AUWCMSJ_Students.csv"); // Maqaa fayilaa
+    document.body.appendChild(link);
+    
+    link.click(); // Ofumaan akka download godhu
+    document.body.removeChild(link);
+}
+window.onload = function() {
+    renderData();           // Barattoota fida
+    loadStudentProgress();  // Progress fida
+    renderResources();      // Resource-oota fida
+};
+
     </script>
 </body>
 </html>
