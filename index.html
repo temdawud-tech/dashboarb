@@ -210,19 +210,80 @@
             <button class="btn btn-primary" onclick="updateNews()">Update News</button>
         </div>
     </div>
+<script>
+   // --- 1. DARK MODE LOGIC ---
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-theme');
+    const isDark = document.body.classList.contains('dark-theme');
+    localStorage.setItem('adminTheme', isDark ? 'dark' : 'light');
+}
 
-    <script>
-        // Function kana script keessatti bakka buusi
+// --- 2. SIDEBAR TOGGLE (Bilbila irratti) ---
+function toggleMenu() {
+    const sidebar = document.getElementById('mySidebar');
+    sidebar.classList.toggle('active');
+}
+
+// --- 3. SECTIONS DHOKSUU FI AGARSIISUU ---
+function toggleAddUser() {
+    const section = document.getElementById('addUserSection');
+    section.style.display = section.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleUpload() {
+    const section = document.getElementById('uploadSection');
+    section.style.display = section.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleManageResources() {
+    const section = document.getElementById('manageResourcesCard');
+    section.style.display = section.style.display === 'none' ? 'block' : 'none';
+    if(section.style.display === 'block') loadResources();
+}
+
+// --- 4. EXPORT TO EXCEL (CSV) ---
+function exportToCSV() {
+    let table = document.getElementById("userTable");
+    let rows = Array.from(table.rows);
+    let csv = rows.map(row => Array.from(row.cells).map(cell => cell.innerText).join(",")).join("\n");
+    
+    let blob = new Blob([csv], { type: "text/csv" });
+    let url = window.URL.createObjectURL(blob);
+    let a = document.createElement("a");
+    a.href = url;
+    a.download = "Students_List.csv";
+    a.click();
+}
+
+// --- 5. SEARCH TABLE LOGIC ---
+function searchTable() {
+    let input = document.getElementById("searchInput").value.toUpperCase();
+    let rows = document.getElementById("userList").getElementsByTagName("tr");
+    
+    for (let i = 0; i < rows.length; i++) {
+        let text = rows[i].innerText.toUpperCase();
+        rows[i].style.display = text.includes(input) ? "" : "none";
+    }
+}
+
+// --- 6. BACKEND API CALLS ---
+
+// A. Barattoota fiduu
 async function loadStudents() {
     try {
         const res = await fetch('http://localhost:5000/api/admin/students');
         const students = await res.json();
         
         const list = document.getElementById('userList');
-        if (!list) return; // Yoo 'userList' hin jirre dhaabi
-        
+        const totalCount = document.getElementById('count-total');
+        const activeCount = document.getElementById('count-active');
+        const pendingCount = document.getElementById('count-pending');
+
         list.innerHTML = "";
+        let active = 0, pending = 0;
+
         students.forEach(user => {
+            if(user.status === 'active') active++; else pending++;
             list.innerHTML += `
                 <tr>
                     <td><b>${user.studentId}</b></td>
@@ -231,28 +292,58 @@ async function loadStudents() {
                     <td>
                         ${user.status === 'pending' ? 
                           `<button class="btn btn-primary" onclick="approveStudent('${user.studentId}')">Approve</button>` : 
-                          '✅'}
+                          '<span style="color:green">Verified ✅</span>'}
                     </td>
                 </tr>`;
         });
+
+        totalCount.innerText = students.length;
+        activeCount.innerText = active;
+        pendingCount.innerText = pending;
+
     } catch (err) {
         console.error("Ragaa fiduun hin danda'amne:", err);
     }
 }
+
+// B. Mirkaneessuu (Approve)
 async function approveStudent(id) {
-    const res = await fetch(`http://localhost:5000/api/admin/approve/${id}`, {
-        method: 'PUT'
-    });
-    if (res.ok) {
-        alert("Barataa mirkanaa'eera!");
-        loadStudents(); // Gabatee deebisii refresh godhi
-    }
+    if(!confirm("Barataa kana mirkaneessuu barbaadduu?")) return;
+    try {
+        const res = await fetch(`http://localhost:5000/api/admin/approve/${id}`, { method: 'PUT' });
+        if (res.ok) {
+            alert("Barataa mirkanaa'eera!");
+            loadStudents();
+        }
+    } catch (err) { alert("Error!"); }
 }
 
-// Fuulli yeroo banamu akka waamamuuf
-window.onload = loadStudents;
+// C. Announcement Update
+async function updateNews() {
+    const content = document.getElementById('newsContent').value;
+    if(!content) return alert("Barreeffama galchi!");
+    
+    // Backend API kee irratti hunda'a
+    alert("Announcement Updated: " + content);
+}
 
+// D. Logout
+function logout() {
+    sessionStorage.clear();
+    window.location.href = "login.html";
+}
 
-    </script>
+// Window Load
+window.onload = () => {
+    loadStudents();
+    // Theme check
+    if(localStorage.getItem('adminTheme') === 'dark') document.body.classList.add('dark-theme');
+};
+async function approveStudent(id) {
+    const res = await fetch(`http://localhost:5000/api/admin/approve?studentId=${encodeURIComponent(id)}`, {
+        method: 'PUT'
+    });
+}  
+</script>
 </body>
 </html>

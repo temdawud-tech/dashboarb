@@ -90,42 +90,69 @@
     </div>
 
     <script>
-      <script>
-    async function login() {
-        // Iddoo input keetii ragaa fiduuf (IDs: studentId fi password)
-        const studentId = document.getElementById('studentId').value;
-        const password = document.getElementById('password').value;
-
-        try {
-            const res = await fetch('http://localhost:5000/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ studentId, password })
-            });
-
-            const data = await res.json();
-
-            if (res.ok && data.token) {
-                // Token fi ragaalee biroo yeroof kuusuuf
-                sessionStorage.setItem('token', data.token);
-                sessionStorage.setItem('userName', data.name);
-                sessionStorage.setItem('role', data.role);
-
-                // Gara Dashboard tti dabarsuuf
-                if (data.role === 'admin') {
-                    window.location.href = 'admindashboard.html';
-                } else {
-                    window.location.href = 'userdashboard.html';
-                }
-            } else {
-                alert(data.error || "Login hin milkoofne!");
-            }
-        } catch (error) {
-            console.error("Error:", error);
-            alert("Backend kee hin jiru (Server Check)!");
-        }
+      
+    // Password agarsiisuu fi dhoksuuf
+function togglePassword() {
+    const pwField = document.getElementById('passwordField');
+    const icon = document.getElementById('toggleIcon');
+    if (pwField.type === 'password') {
+        pwField.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        pwField.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
     }
+}
+
+// Hojii Login raawwachuuf
+async function handleLogin(event) {
+    event.preventDefault(); // Fuulli akka hin 'refresh' goone
+
+    const noticeBox = document.getElementById('notice-box');
+    const loginBtn = document.getElementById('loginBtn');
+    
+    // Ragaalee input irraa fuuchuu (IDs sirreeffamaniiru)
+    const studentId = document.getElementById('userId').value;
+    const password = document.getElementById('passwordField').value;
+
+    loginBtn.innerText = "Checking...";
+    loginBtn.disabled = true;
+
+    try {
+        const res = await fetch('http://localhost:5000/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentId, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.token) {
+            // Ragaalee kuusuu
+            sessionStorage.setItem('token', data.token);
+            sessionStorage.setItem('userName', data.name);
+            sessionStorage.setItem('role', data.role);
+
+            // Gara Dashboard-itti dabarsuu
+            if (data.role === 'admin') {
+                window.location.href = 'admindashboard.html';
+            } else {
+                window.location.href = 'userdashboard.html';
+            }
+       } else {
+    // Backend 'message' deebisa yoo ta'e data.message fayyadami
+    noticeBox.style.display = "block";
+    noticeBox.innerText = data.message || data.error || "Login hin milkoofne!";
+    loginBtn.innerText = "Login";
+    loginBtn.disabled = false;
+}
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Server waliin wal quunnamuun hin danda'amne!");
+        loginBtn.innerText = "Login";
+        loginBtn.disabled = false;
+    }
+}
 </script>
-    </script>
 </body>
 </html>

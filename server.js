@@ -1,6 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcryptjs'); // 'bcrypt' ykn 'bcryptjs' fayyadamuu kee mirkaneessi
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 require('dotenv').config();
@@ -14,9 +14,7 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/auwcmsj')
     .then(() => console.log("✅ MongoDB Connected: auwcmsj"))
     .catch(err => console.log("❌ Connection Error:", err));
 
-// 2. SCHEMAS (Bakka tokkotti qofa uumaman)
-
-// User Schema (Register, Login, Admin)
+// 2. SCHEMAS
 const userSchema = new mongoose.Schema({
     studentId: { type: String, required: true, unique: true, trim: true },
     name: { type: String, required: true },
@@ -28,7 +26,6 @@ const userSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
-// Skills Schema (skill.html)
 const skillSchema = new mongoose.Schema({
     studentId: String,
     skillName: String,
@@ -36,7 +33,6 @@ const skillSchema = new mongoose.Schema({
     description: String
 });
 
-// Resources Schema
 const resourceSchema = new mongoose.Schema({
     title: String,
     category: String,
@@ -46,7 +42,6 @@ const resourceSchema = new mongoose.Schema({
     date: { type: Date, default: Date.now }
 });
 
-// Student Progress Schema
 const progressSchema = new mongoose.Schema({
     studentId: String,
     studentName: String,
@@ -55,7 +50,6 @@ const progressSchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now }
 });
 
-// Contact & Feedback Schema (fcontact.html)
 const contactSchema = new mongoose.Schema({
     name: String,
     email: String,
@@ -64,7 +58,7 @@ const contactSchema = new mongoose.Schema({
     date: { type: Date, default: Date.now }
 });
 
-// 3. MODELS (Bakka tokkotti uumaman)
+// 3. MODELS
 const User = mongoose.model('User', userSchema);
 const Skill = mongoose.model('Skill', skillSchema);
 const Resource = mongoose.model('Resource', resourceSchema);
@@ -73,10 +67,11 @@ const Contact = mongoose.model('Contact', contactSchema);
 
 // 4. API ENDPOINTS
 
-// --- Auth APIs ---
+// --- Register ---
 app.post('/api/register', async (req, res) => {
     try {
         const { studentId, name, password } = req.body;
+        // Password hash gochuu
         const hashedPw = await bcrypt.hash(password, 10);
         const newUser = new User({ studentId, name, password: hashedPw });
         await newUser.save();
@@ -86,50 +81,102 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
+// --- Login (Sirreeffame) ---
 app.post('/api/login', async (req, res) => {
-    const { studentId, password } = req.body;
-    const user = await User.findOne({ studentId });
-    if (!user) return res.status(404).json({ error: "Barataa hin argamne!" });
+    try {
+        const { studentId, password } = req.body;
+        console.log("Login yaalii ID:", studentId);
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ error: "Password dogoggora!" });
+        // 'User' model fayyadamna
+        const student = await User.findOne({ studentId: studentId });
 
-    if (user.status !== 'active') return res.status(403).json({ error: "Account kee hin mirkanoofne!" });
+        if (!student) {
+            return res.status(400).json({ message: "Barataan ID kanaan hin argamne!" });
+        }
 
-    const token = jwt.sign({ id: user._id, role: user.role }, 'SECRET_KEY', { expiresIn: '1d' });
-    res.json({ token, role: user.role, name: user.name });
+        // Status active ta'uu isaa mirkaneessuu
+        if (student.status !== 'active') {
+            return res.status(403).json({ message: "Account kee hamma Admin mirkaneessutti eagi!" });
+        }
+
+        // Password Bcrypt fayyadamnee wal bira qabna
+        const isMatch = await bcrypt.compare(password, student.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: "Password dogoggora!" });
+        }
+
+        // Login milkaa'eera - Ragaa Frontend barbaadu deebisuu
+        res.json({
+            message: "Baga nagaan dhufte!",
+            token: "dummy-token-12345", // JWT 'token' asitti uumuu dandeessa
+            name: student.name,
+            role: student.role || 'student'
+        });
+
+    } catch (err) {
+        console.error("Login Error:", err);
+        res.status(500).json({ message: "Server Error uumameera" });
+    }
 });
 
 // --- Admin APIs ---
 app.get('/api/admin/students', async (req, res) => {
-    const students = await User.find({ role: 'student' });
-    res.json(students);
+    try {
+        const students = await User.find({ role: 'student' });
+        res.json(students);
+    } catch (err) {
+        res.status(500).json({ message: "Ragaa fiduun hin danda'amne" });
+    }
 });
 
-app.put('/api/admin/approve/:id', async (req, res) => {
-    await User.findOneAndUpdate({ studentId: req.params.id }, { status: 'active' });
-    res.json({ message: "Barataa mirkanaa'eera!" });
+// Admin Approve (Sirreeffame)
+app.put('/api/admin/approve', async (req, res) => {
+    try {
+        const studentId = req.query.studentId; 
+        const updatedStudent = await User.findOneAndUpdate(
+            { studentId: studentId }, 
+            { status: 'active' }, 
+            { new: true }
+        );
+
+        if (!updatedStudent) {
+            return res.status(404).json({ message: "Barataan hin argamne" });
+        }
+        res.json({ message: "Barataan mirkanaa'eera!", student: updatedStudent });
+    } catch (err) {
+        res.status(500).json({ message: "Error uumameera" });
+    }
 });
 
 // --- Feature APIs ---
 app.post('/api/skills', async (req, res) => {
-    const newSkill = new Skill(req.body);
-    await newSkill.save();
-    res.json({ message: "Skill galmeeffameera!" });
+    try {
+        const newSkill = new Skill(req.body);
+        await newSkill.save();
+        res.json({ message: "Skill galmeeffameera!" });
+    } catch (err) { res.status(500).send(err); }
 });
 
 app.post('/api/progress', async (req, res) => {
-    const newProgress = new Progress(req.body);
-    await newProgress.save();
-    res.json({ message: "Gabaasni ergameera!" });
+    try {
+        const newProgress = new Progress(req.body);
+        await newProgress.save();
+        res.json({ message: "Gabaasni ergameera!" });
+    } catch (err) { res.status(500).send(err); }
 });
 
 app.post('/api/contact', async (req, res) => {
-    const newMessage = new Contact(req.body);
-    await newMessage.save();
-    res.json({ message: "Ergaan kee ga'eera!" });
+    try {
+        const newMessage = new Contact(req.body);
+        await newMessage.save();
+        res.json({ message: "Ergaan kee ga'eera!" });
+    } catch (err) { res.status(500).send(err); }
 });
 
 // 5. Server Start
 const PORT = 5000;
 app.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));
+
+app.get("/", (req, res) => {
+  res.send("Server is running ✅");
+});

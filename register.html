@@ -124,26 +124,35 @@
         </div>
     </div>
 
-    <script>
-        async function register() {
-    const studentId = document.getElementById('newId').value;
-    const name = document.getElementById('newName').value;
-    const password = document.getElementById('newPass').value;
+  <script>
+    async function validateAndSave() {
+        // 1. Ragaalee input irraa fiduu
+        const name = document.getElementById('fullName').value;
+        const studentId = document.getElementById('universityId').value;
+        const department = document.getElementById('department').value;
 
-    const res = await fetch('http://localhost:5000/api/register', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ studentId, name, password })
-    });
+        // 2. Bakka duwwaan jiraachuu isaa mirkaneessuu
+        if (!name || !studentId || !department) {
+            alert("Maaloo, bakka duwwaa hunda guuti!");
+            return;
+        }
 
-    const data = await res.json();
-    if(res.ok) {
-        alert("Galmeen milkaa'eera! Admin akka siif mirkaneessu eegi.");
-        window.location.href = 'login.html';
-    } else {
-        alert(data.error);
+        // 3. Ragaa kana localStorage keessa kaahuu (Step itti aanutti akka hin banneef)
+        const generalInfo = {
+            name: name,
+            studentId: studentId,
+            department: department
+        };
+        localStorage.setItem('studentGeneral', JSON.stringify(generalInfo));
+
+        // 4. GARA FUULA CONTACT-ITTI DABARSUU (Akkuma ati barbaaddetti)
+        window.location.href = 'fcontact.html'; 
     }
-}
-    </script>
+
+    // 5. BACK YOO JEDHU GARA LOGIN-ITTI DEEBISUURF
+    function goBack() {
+        window.location.href = 'login.html';
+    }
+</script>>
 </body>
 </html>
