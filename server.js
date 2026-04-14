@@ -25,7 +25,16 @@ const userSchema = new mongoose.Schema({
     verificationCode: { type: String, default: null },
     createdAt: { type: Date, default: Date.now }
 });
-
+const contactEmergencySchema = new mongoose.Schema({
+    studentId: { type: String, trim: true }, // Barataa adda baasuuf
+    eName: { type: String, required: true },
+    ePhone: { type: String, required: true },
+    eRel: String,
+    fName: { type: String, required: true },
+    fPhone: { type: String, required: true },
+    fRel: String,
+    createdAt: { type: Date, default: Date.now }
+});
 const skillSchema = new mongoose.Schema({
     studentId: String,
     skillName: String,
@@ -64,7 +73,37 @@ const Skill = mongoose.model('Skill', skillSchema);
 const Resource = mongoose.model('Resource', resourceSchema);
 const Progress = mongoose.model('Progress', progressSchema);
 const Contact = mongoose.model('Contact', contactSchema);
+// ... Models duraan jiran jala ...
+const ContactEmergency = mongoose.model('ContactEmergency', contactEmergencySchema);
+// Step 1: General Info Simachuu
+app.post('/api/register-step1', async (req, res) => {
+    try {
+        const { universityId, email } = req.body;
 
+        // Check if student already exists
+        const existingUser = await User.findOne({ 
+            $or: [{ studentId: universityId }, { email: email }] 
+        });
+
+        if (existingUser) {
+            return res.status(400).json({ message: "ID or Email already registered!" });
+        }
+
+        // Ammaaf ragaa kana "User" model keessatti 'pending' goonee galmeessina
+        const newUser = new User({
+            studentId: universityId,
+            name: req.body.fullName,
+            email: email,
+            password: "temporary_until_step2", // Step 2 irratti jijjiirama
+            status: 'pending'
+        });
+
+        await newUser.save();
+        res.status(200).json({ message: "Step 1 saved successfully!" });
+    } catch (err) {
+        res.status(500).json({ message: "Server error during registration" });
+    }
+});
 // 4. API ENDPOINTS
 
 // --- Register ---
@@ -78,6 +117,92 @@ app.post('/api/register', async (req, res) => {
         res.status(201).json({ message: "Galmeen milkaa'eera. Admin biratti mirkaneeffama eegi." });
     } catch (err) {
         res.status(400).json({ error: "ID kanaan dura galmaa'eera!" });
+    }
+});
+app.post('/api/register-step2', async (req, res) => {
+    try {
+        const newData = new ContactEmergency(req.body);
+        await newData.save();
+        res.status(200).json({ message: "Step 2 Success!" });
+    } catch (err) {
+        res.status(500).json({ error: "Database Error" });
+    }
+});
+app.post('/api/register-step2', async (req, res) => {
+    try {
+        const data = req.body;
+        
+        // 1. Emergency Contact Save gochuu
+        const newData = new ContactEmergency(data);
+        await newData.save();
+
+        // 2. Password uumuu fi User Update gochuu
+        const generatedPassword = crypto.randomBytes(4).toString('hex');
+        const hashedPw = await bcrypt.hash(generatedPassword, 10);
+
+        const user = await User.findOneAndUpdate(
+            { studentId: data.universityId },
+            { password: hashedPw },
+            { new: true } // User haaraa email qabu akka nuuf deebisu
+        );
+
+        // 3. AMMA ASITTI ERGAMA!
+        if (user && user.email) {
+            await sendPasswordEmail(user.email, generatedPassword);
+            console.log(`✅ Password ergameera: ${user.email}`);
+        }
+
+        res.status(200).json({ message: "Step 2 dhumateera, email kee ilaali!" });
+
+    } catch (err) {
+        console.error("Step 2 Error:", err);
+        res.status(500).json({ error: "Database Error" });
+    }
+});
+const nodemailer = require('nodemailer');
+
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
+
+// Funksishinii koodii kana gadi kaayi (app.post gubbaatti)
+const sendPasswordEmail = async (userEmail, generatedPassword) => {
+    // ... koodii mailOptions fi transporter.sendMail ...
+};
+
+// --- STEP 2 ENDPOINT (SIRREEFFAME) ---
+app.post('/api/register-step2', async (req, res) => {
+    try {
+        const data = req.body;
+        console.log("Data received for Step 2:", data);
+
+        // 1. Ragaa Emergency Contact kuusuu
+        const newData = new ContactEmergency(data);
+        await newData.save();
+
+        // 2. User-ni kanaan dura Step 1 irratti uumame 'active' gochuuf ykn password jijjiiruuf
+        // Hubachiisa: universityId frontend irraa dhufuu qaba
+        if (data.universityId) {
+            const generatedPassword = crypto.randomBytes(4).toString('hex');
+            const hashedPw = await bcrypt.hash(generatedPassword, 10);
+
+            await User.findOneAndUpdate(
+                { studentId: data.universityId },
+                { password: hashedPw, status: 'pending' } // Admin hamma mirkaneessutti pending deebisina
+            );
+            
+            console.log(`Generated Password for ${data.universityId}: ${generatedPassword}`);
+            // Asitti Nodemailer itti dabaluu dandeessa
+        }
+
+        res.status(200).json({ message: "Step 2 Success! Data saved." });
+    } catch (err) {
+        console.error("Step 2 Error:", err);
+        res.status(500).json({ error: "Database Error: " + err.message });
     }
 });
 

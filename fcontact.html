@@ -89,29 +89,73 @@
 </div>
 
 <script>
-    // Logic to navigate to the previous page
+    // Gara duubatti (Register Page) deebi'uuf
     function goBack() {
-        window.history.back();
+        window.location.href = 'register.html'; 
     }
 
-    // Logic to validate inputs and move forward to skill.html
-    function checkAndGo() {
-        const form = document.getElementById('step2Form');
-        const inputs = form.querySelectorAll('.input-field');
-        let allValid = true;
+    async function checkAndGo() {
+        const nameRegex = /^[A-Za-z\s]+$/;
+        const phoneRegex = /^[0-9]{10,13}$/;
 
-        inputs.forEach(input => {
-            if (input.value.trim() === "") {
-                input.classList.add('invalid');
-                allValid = false;
+        // 1. ID barataa localStorage irraa fiduu (Step 1 irratti waan save gooneef)
+        const studentId = localStorage.getItem('tempStudentId');
+
+        const data = {
+            universityId: studentId, // KUN MURTEESSAADHA!
+            eName: document.getElementById('eName').value.trim(),
+            ePhone: document.getElementById('ePhone').value.trim(),
+            eRel: document.getElementById('eRelationship').value.trim(),
+            fName: document.getElementById('fName').value.trim(),
+            fPhone: document.getElementById('fPhone').value.trim(),
+            fRel: document.getElementById('fRelationship').value.trim()
+        };
+
+        // Validation
+        if (!studentId) {
+            alert("Ragaan Step 1 hin jiru. Maaloo irra deebi'ii galmaa'i.");
+            window.location.href = 'register.html';
+            return;
+        }
+
+        if (!data.eName || !data.ePhone || !data.fName || !data.fPhone) {
+            alert("Maaloo, bakka duwwaa guutaa!");
+            return;
+        }
+
+        if (!nameRegex.test(data.eName) || !phoneRegex.test(data.ePhone)) {
+            alert("Maaloo, maqaa fi bilbila sirrii galchaa!");
+            return;
+        }
+
+        try {
+            const nextBtn = document.querySelector(".btn-next");
+            nextBtn.disabled = true;
+            nextBtn.innerText = "Ergamaa jira...";
+
+            // 2. URL Guutuu fayyadami (http://localhost:5000)
+            const response = await fetch('http://localhost:5000/api/register-step2', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert("Step 2 milkaa'eera!");
+                window.location.href = 'skill.html'; 
+            } else {
+                alert("Server Error: " + (result.error || "Ragaan hin fudhatamne"));
+                nextBtn.disabled = false;
+                nextBtn.innerText = "Next Step";
             }
-        });
-
-        if (allValid) {
-            // This will now move the user to skill.html
-            window.location.href = "skill.html"; 
-        } else {
-            alert("Maaloo hunda isaa guuti!");
+        } catch (error) {
+            alert("Error: Gara server-tti erguun hin danda'amne. Server kee banuu kee mirkaneessi!");
+            console.error(error);
+            const nextBtn = document.querySelector(".btn-next");
+            nextBtn.disabled = false;
+            nextBtn.innerText = "Next Step";
         }
     }
 </script>

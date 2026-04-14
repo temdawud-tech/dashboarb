@@ -103,6 +103,7 @@
             color: #065f46;
             text-decoration: none;
             font-weight: bold;
+            cursor: pointer;
         }
 
         /* Animation for clock */
@@ -131,7 +132,7 @@
 
         <h2 class="thanks-msg">
             THANK YOU FOR REGISTERING,
-            <span class="user-name">[Student's Name]</span>
+            <span id="student-name" class="user-name">[Student's Name]</span>
         </h2>
 
         <div class="success-icon animate-spin-slow">🕒</div>
@@ -139,17 +140,33 @@
         <div class="info-text">
             Your Jema'a application has been submitted successfully and is currently under review by our Admin team. This process typically takes up to <b>24 hours</b>. 
             <br><br>
-            A notification will be sent to your registered <span class="contact-info">Email Address</span> and <span class="contact-info">Phone Number</span> once your account is active.
-            <br><br>
             Please note: Full access to the student dashboard and features will be unlocked after activation.
         </div>
 
         <div class="footer-links">
-            <a href="#">Dashboard Overview</a>
+            <a onclick="logout()">Logout</a>
             <span>|</span>
             <a href="#">Help & Support</a>
         </div>
     </div>
-<script src="script.js"></script>
+
+<script> 
+document.addEventListener("DOMContentLoaded", function() {
+    // Step 1 irratti 'fullName' jedhamee kuufameera ta'a
+    const savedName = localStorage.getItem("fullName") || localStorage.getItem("userName");
+
+    if (savedName) {
+        document.getElementById("student-name").textContent = savedName;
+    } else {
+        document.getElementById("student-name").textContent = "User";
+    }
+});
+
+// Funksishinii Logout
+function logout() {
+    localStorage.clear(); // Ragaa hunda haqa
+    window.location.href = 'login.html'; // Gara login qajeelcha
+}
+</script>
 </body>
 </html>
