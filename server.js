@@ -1,166 +1,54 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs'); // 'bcrypt' ykn 'bcryptjs' fayyadamuu kee mirkaneessi
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// 1. Connection Database (MongoDB)
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/auwcmsj')
+// 1. Connection Database
+mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/auwcmsj')
     .then(() => console.log("✅ MongoDB Connected: auwcmsj"))
     .catch(err => console.log("❌ Connection Error:", err));
 
-// 2. SCHEMAS
+// 2. MODELS
 const userSchema = new mongoose.Schema({
     studentId: { type: String, required: true, unique: true, trim: true },
     name: { type: String, required: true },
+    email: { type: String },
     password: { type: String, required: true },
     role: { type: String, enum: ['student', 'admin'], default: 'student' },
     status: { type: String, enum: ['pending', 'active', 'blocked'], default: 'pending' },
-    isVerified: { type: Boolean, default: false },
-    verificationCode: { type: String, default: null },
+    eName: { type: String },
+    ePhone: { type: String },
+    eRel: { type: String },
+    fName: { type: String },
+    fPhone: { type: String },
+    fRel: { type: String },
+    academicSkill: { type: String },
+    spiritualSkill: { type: String },
+    contribution: { type: String },
     createdAt: { type: Date, default: Date.now }
 });
-const contactEmergencySchema = new mongoose.Schema({
-    studentId: { type: String, trim: true }, // Barataa adda baasuuf
-    eName: { type: String, required: true },
-    ePhone: { type: String, required: true },
-    eRel: String,
-    fName: { type: String, required: true },
-    fPhone: { type: String, required: true },
-    fRel: String,
-    createdAt: { type: Date, default: Date.now }
-});
-const skillSchema = new mongoose.Schema({
-    studentId: String,
-    skillName: String,
-    level: String,
-    description: String
-});
 
-const resourceSchema = new mongoose.Schema({
-    title: String,
-    category: String,
-    fileName: String,
-    fileData: String,
-    uploadedBy: String,
-    date: { type: Date, default: Date.now }
-});
-
-const progressSchema = new mongoose.Schema({
-    studentId: String,
-    studentName: String,
-    level: String,
-    detail: String,
-    timestamp: { type: Date, default: Date.now }
-});
-
-const contactSchema = new mongoose.Schema({
-    name: String,
-    email: String,
-    subject: String,
-    message: String,
-    date: { type: Date, default: Date.now }
-});
-
-// 3. MODELS
 const User = mongoose.model('User', userSchema);
-const Skill = mongoose.model('Skill', skillSchema);
-const Resource = mongoose.model('Resource', resourceSchema);
-const Progress = mongoose.model('Progress', progressSchema);
-const Contact = mongoose.model('Contact', contactSchema);
-// ... Models duraan jiran jala ...
-const ContactEmergency = mongoose.model('ContactEmergency', contactEmergencySchema);
-// Step 1: General Info Simachuu
-app.post('/api/register-step1', async (req, res) => {
-    try {
-        const { universityId, email } = req.body;
 
-        // Check if student already exists
-        const existingUser = await User.findOne({ 
-            $or: [{ studentId: universityId }, { email: email }] 
-        });
+const ContactEmergency = mongoose.model('ContactEmergency', new mongoose.Schema({
+    universityId: { type: String, required: true },
+    eName: String, 
+    ePhone: String, 
+    eRel: String,
+    fName: String, 
+    fPhone: String, 
+    fRel: String
+}));
 
-        if (existingUser) {
-            return res.status(400).json({ message: "ID or Email already registered!" });
-        }
-
-        // Ammaaf ragaa kana "User" model keessatti 'pending' goonee galmeessina
-        const newUser = new User({
-            studentId: universityId,
-            name: req.body.fullName,
-            email: email,
-            password: "temporary_until_step2", // Step 2 irratti jijjiirama
-            status: 'pending'
-        });
-
-        await newUser.save();
-        res.status(200).json({ message: "Step 1 saved successfully!" });
-    } catch (err) {
-        res.status(500).json({ message: "Server error during registration" });
-    }
-});
-// 4. API ENDPOINTS
-
-// --- Register ---
-app.post('/api/register', async (req, res) => {
-    try {
-        const { studentId, name, password } = req.body;
-        // Password hash gochuu
-        const hashedPw = await bcrypt.hash(password, 10);
-        const newUser = new User({ studentId, name, password: hashedPw });
-        await newUser.save();
-        res.status(201).json({ message: "Galmeen milkaa'eera. Admin biratti mirkaneeffama eegi." });
-    } catch (err) {
-        res.status(400).json({ error: "ID kanaan dura galmaa'eera!" });
-    }
-});
-app.post('/api/register-step2', async (req, res) => {
-    try {
-        const newData = new ContactEmergency(req.body);
-        await newData.save();
-        res.status(200).json({ message: "Step 2 Success!" });
-    } catch (err) {
-        res.status(500).json({ error: "Database Error" });
-    }
-});
-app.post('/api/register-step2', async (req, res) => {
-    try {
-        const data = req.body;
-        
-        // 1. Emergency Contact Save gochuu
-        const newData = new ContactEmergency(data);
-        await newData.save();
-
-        // 2. Password uumuu fi User Update gochuu
-        const generatedPassword = crypto.randomBytes(4).toString('hex');
-        const hashedPw = await bcrypt.hash(generatedPassword, 10);
-
-        const user = await User.findOneAndUpdate(
-            { studentId: data.universityId },
-            { password: hashedPw },
-            { new: true } // User haaraa email qabu akka nuuf deebisu
-        );
-
-        // 3. AMMA ASITTI ERGAMA!
-        if (user && user.email) {
-            await sendPasswordEmail(user.email, generatedPassword);
-            console.log(`✅ Password ergameera: ${user.email}`);
-        }
-
-        res.status(200).json({ message: "Step 2 dhumateera, email kee ilaali!" });
-
-    } catch (err) {
-        console.error("Step 2 Error:", err);
-        res.status(500).json({ error: "Database Error" });
-    }
-});
-const nodemailer = require('nodemailer');
-
+// 3. NODEMAILER
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -169,139 +57,232 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Funksishinii koodii kana gadi kaayi (app.post gubbaatti)
 const sendPasswordEmail = async (userEmail, generatedPassword) => {
-    // ... koodii mailOptions fi transporter.sendMail ...
+    const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: userEmail,
+        subject: 'AUWCMSJ Password',
+        text: `Baga nagaan dhufte! Password kee: ${generatedPassword}`
+    };
+    return transporter.sendMail(mailOptions);
 };
 
-// --- STEP 2 ENDPOINT (SIRREEFFAME) ---
+// 4. API ENDPOINTS
+app.post('/api/register-step1', async (req, res) => {
+    try {
+        const { universityId, email, fullName } = req.body;
+        const existing = await User.findOne({ studentId: universityId });
+        if (existing) return res.status(400).json({ message: "ID is already registered!" });
+
+        const newUser = new User({
+            studentId: universityId,
+            name: fullName,
+            email: email,
+            password: "temporary_until_step2",
+            status: 'pending'
+        });
+        await newUser.save();
+        res.status(200).json({ message: "Step 1 saved!" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 app.post('/api/register-step2', async (req, res) => {
     try {
         const data = req.body;
-        console.log("Data received for Step 2:", data);
+        
+        // Debugging: Ragaa HTML irraa dhufe terminal irratti siif argisiisa
+        console.log("Ragaa Step 2 irraa dhufe:", data);
 
-        // 1. Ragaa Emergency Contact kuusuu
+        if (!data.universityId) {
+            return res.status(400).json({ error: "ID barataa hin argamne. Step 1 irraa deebi'ii yaali." });
+        }
+
+        // 1. Emergency info save godhuu
         const newData = new ContactEmergency(data);
         await newData.save();
 
-        // 2. User-ni kanaan dura Step 1 irratti uumame 'active' gochuuf ykn password jijjiiruuf
-        // Hubachiisa: universityId frontend irraa dhufuu qaba
-        if (data.universityId) {
-            const generatedPassword = crypto.randomBytes(4).toString('hex');
-            const hashedPw = await bcrypt.hash(generatedPassword, 10);
+        // 2. Password uumuu
+        const generatedPassword = crypto.randomBytes(4).toString('hex');
+        const hashedPw = await bcrypt.hash(generatedPassword, 10);
 
-            await User.findOneAndUpdate(
-                { studentId: data.universityId },
-                { password: hashedPw, status: 'pending' } // Admin hamma mirkaneessutti pending deebisina
-            );
-            
-            console.log(`Generated Password for ${data.universityId}: ${generatedPassword}`);
-            // Asitti Nodemailer itti dabaluu dandeessa
+        // 3. User update gochuu
+        const updatedUser = await User.findOneAndUpdate(
+            { studentId: data.universityId },
+            {
+                password: hashedPw,
+                eName: data.eName || "",
+                ePhone: data.ePhone || "",
+                eRel: data.eRel || "",
+                fName: data.fName || "",
+                fPhone: data.fPhone || "",
+                fRel: data.fRel || ""
+            },
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ error: "Barataan ID kanaan galmaa'e User collection keessa hin jiru." });
         }
 
-        res.status(200).json({ message: "Step 2 Success! Data saved." });
+        // 4. Email erguu
+        if (updatedUser.email) {
+            try {
+                await sendPasswordEmail(updatedUser.email, generatedPassword);
+            } catch (emailErr) {
+                console.log("Email erguun hin danda'amne garuu ragaan kuusameera.");
+            }
+        }
+
+        res.status(200).json({ message: "Step 2 Milkaa'eera!" });
+
     } catch (err) {
-        console.error("Step 2 Error:", err);
-        res.status(500).json({ error: "Database Error: " + err.message });
+        console.error("DATABASE ERROR:", err);
+        // Error sirriin maali akka ta'e Alert irratti akka sitti himuuf:
+        res.status(500).json({ error: err.message });
     }
 });
 
-// --- Login (Sirreeffame) ---
+app.post('/api/skills', async (req, res) => {
+    try {
+        const { universityId, academicSkill, spiritualSkill, contribution } = req.body;
+
+        if (!universityId) {
+            return res.status(400).json({ message: "University ID is required." });
+        }
+
+        const updatedUser = await User.findOneAndUpdate(
+            { studentId: universityId },
+            {
+                academicSkill: academicSkill || "",
+                spiritualSkill: spiritualSkill || "",
+                contribution: contribution || ""
+            },
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "Student not found." });
+        }
+
+        res.status(200).json({ message: "Skills saved successfully." });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 app.post('/api/login', async (req, res) => {
     try {
         const { studentId, password } = req.body;
-        console.log("Login yaalii ID:", studentId);
+        const user = await User.findOne({ studentId });
+        if (!user) return res.status(400).json({ message: "ID hin argamne!" });
+        if (user.status !== 'active') return res.status(403).json({ message: "Admin mirkaneessuu eagi!" });
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) return res.status(400).json({ message: "Password dogoggora!" });
 
-        // 'User' model fayyadamna
-        const student = await User.findOne({ studentId: studentId });
+        const token = jwt.sign(
+            { userId: user._id, studentId: user.studentId, role: user.role },
+            process.env.JWT_SECRET || "change_this_in_env",
+            { expiresIn: "2h" }
+        );
 
-        if (!student) {
-            return res.status(400).json({ message: "Barataan ID kanaan hin argamne!" });
-        }
-
-        // Status active ta'uu isaa mirkaneessuu
-        if (student.status !== 'active') {
-            return res.status(403).json({ message: "Account kee hamma Admin mirkaneessutti eagi!" });
-        }
-
-        // Password Bcrypt fayyadamnee wal bira qabna
-        const isMatch = await bcrypt.compare(password, student.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: "Password dogoggora!" });
-        }
-
-        // Login milkaa'eera - Ragaa Frontend barbaadu deebisuu
-        res.json({
-            message: "Baga nagaan dhufte!",
-            token: "dummy-token-12345", // JWT 'token' asitti uumuu dandeessa
-            name: student.name,
-            role: student.role || 'student'
-        });
-
+        res.json({ message: "Success", name: user.name, role: user.role, token });
     } catch (err) {
-        console.error("Login Error:", err);
-        res.status(500).json({ message: "Server Error uumameera" });
+        res.status(500).json({ message: "Server Error" });
     }
 });
 
-// --- Admin APIs ---
+app.get("/", (req, res) => res.send("Server is running ✅"));
+
+const PORT = 5000;
+app.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));
+// 1. Barattoota hunda fiduuf (Agarsiisuu)
 app.get('/api/admin/students', async (req, res) => {
     try {
-        const students = await User.find({ role: 'student' });
-        res.json(students);
+        const students = await User.find().sort({ createdAt: -1 }); // Warra haaraa gubbaatti fida
+
+        // Old records keessatti emergency/family data ContactEmergency keessa qofa yoo ta'e walitti maku
+        const merged = await Promise.all(
+            students.map(async (student) => {
+                const plain = student.toObject();
+
+                const hasEmergencyData = plain.eName || plain.ePhone || plain.fName || plain.fPhone;
+                if (hasEmergencyData) return plain;
+
+                const contact = await ContactEmergency.findOne({ universityId: plain.studentId }).lean();
+                if (!contact) return plain;
+
+                return {
+                    ...plain,
+                    eName: contact.eName || plain.eName,
+                    ePhone: contact.ePhone || plain.ePhone,
+                    eRel: contact.eRel || plain.eRel,
+                    fName: contact.fName || plain.fName,
+                    fPhone: contact.fPhone || plain.fPhone,
+                    fRel: contact.fRel || plain.fRel
+                };
+            })
+        );
+
+        res.json(merged);
     } catch (err) {
         res.status(500).json({ message: "Ragaa fiduun hin danda'amne" });
     }
 });
 
-// Admin Approve (Sirreeffame)
+// 2. Barataa balleessuuf (Delete)
+app.delete('/api/admin/delete/:id', async (req, res) => {
+    try {
+        const studentId = req.params.id;
+        const deletedUser = await User.findOneAndDelete({ studentId: studentId });
+        
+        if (!deletedUser) {
+            return res.status(404).json({ message: "Barataan hin argamne" });
+        }
+        res.json({ message: "Barataa ID " + studentId + " qabu haqameera!" });
+    } catch (err) {
+        res.status(500).json({ message: "Haqqii irratti rakkoon uumame" });
+    }
+});
+
 app.put('/api/admin/approve', async (req, res) => {
     try {
-        const studentId = req.query.studentId; 
-        const updatedStudent = await User.findOneAndUpdate(
+        // Query irraas body irraas akka fudhatuuf:
+        const studentId = req.query.studentId || req.body.studentId; 
+
+        if (!studentId) {
+            return res.status(400).json({ message: "Student ID hin dhufe!" });
+        }
+
+        const updatedUser = await User.findOneAndUpdate(
             { studentId: studentId }, 
             { status: 'active' }, 
             { new: true }
         );
 
-        if (!updatedStudent) {
+        if (!updatedUser) {
             return res.status(404).json({ message: "Barataan hin argamne" });
         }
-        res.json({ message: "Barataan mirkanaa'eera!", student: updatedStudent });
+        res.json({ message: "Barataan mirkanaa'eera!", user: updatedUser });
     } catch (err) {
-        res.status(500).json({ message: "Error uumameera" });
+        res.status(500).json({ message: "Error: " + err.message });
     }
 });
-
-// --- Feature APIs ---
-app.post('/api/skills', async (req, res) => {
+app.post('/api/admin/add-student', async (req, res) => {
     try {
-        const newSkill = new Skill(req.body);
-        await newSkill.save();
-        res.json({ message: "Skill galmeeffameera!" });
-    } catch (err) { res.status(500).send(err); }
-});
-
-app.post('/api/progress', async (req, res) => {
-    try {
-        const newProgress = new Progress(req.body);
-        await newProgress.save();
-        res.json({ message: "Gabaasni ergameera!" });
-    } catch (err) { res.status(500).send(err); }
-});
-
-app.post('/api/contact', async (req, res) => {
-    try {
-        const newMessage = new Contact(req.body);
-        await newMessage.save();
-        res.json({ message: "Ergaan kee ga'eera!" });
-    } catch (err) { res.status(500).send(err); }
-});
-
-// 5. Server Start
-const PORT = 5000;
-app.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));
-
-app.get("/", (req, res) => {
-  res.send("Server is running ✅");
+        const { studentId, name, status } = req.body;
+        // User schema keessatti password dirqama (required) waan ta'eef 
+        // asirratti password feetaa tokko itti kennuun dirqama.
+        const newUser = new User({
+            studentId,
+            name,
+            password: "default123password", // Barataan booda jijjiirrata
+            status: status || 'active'
+        });
+        await newUser.save();
+        res.status(200).json({ message: "Barataan galmaa'eera" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });

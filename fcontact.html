@@ -93,6 +93,25 @@ function goBack() {
     window.location.href = 'register.html';
 }
 
+async function fetchWithApiFallback(path, options) {
+    const host = window.location.hostname;
+    const candidates = [
+        'http://127.0.0.1:5000',
+        'http://localhost:5000',
+        host && host !== 'localhost' && host !== '127.0.0.1' ? `http://${host}:5000` : null
+    ].filter(Boolean);
+
+    let lastError = null;
+    for (const base of candidates) {
+        try {
+            return await fetch(`${base}${path}`, options);
+        } catch (err) {
+            lastError = err;
+        }
+    }
+    throw lastError || new Error('Server connection failed.');
+}
+
    async function checkAndGo() {
     const nameRegex = /^[A-Za-z\s]+$/;
     const phoneRegex = /^[0-9]{10,13}$/;
@@ -127,7 +146,7 @@ function goBack() {
         nextBtn.disabled = true;
         nextBtn.innerText = "Ergamaa jira...";
 
-        const response = await fetch('http://127.0.0.1:5000/api/register-step2', {
+        const response = await fetchWithApiFallback('/api/register-step2', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)

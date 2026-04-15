@@ -128,9 +128,27 @@ async function handleLogin(event) {
         const data = await res.json();
 
         if (res.ok) {
+            // Success response irrattis data barbaachisaa jiraachuu mirkaneessi
+            const hasRequiredSessionData =
+                typeof data?.name === 'string' &&
+                data.name.trim() !== '' &&
+                (data?.role === 'admin' || data?.role === 'student') &&
+                typeof data?.token === 'string' &&
+                data.token.trim() !== '';
+
+            if (!hasRequiredSessionData) {
+                noticeBox.style.display = "block";
+                noticeBox.innerText = "Server response guutuu miti. Maaloo irra deebi'ii yaali.";
+                loginBtn.innerText = "Login";
+                loginBtn.disabled = false;
+                return;
+            }
+
             // Ragaalee kuusuu
+            sessionStorage.setItem('isLoggedIn', 'true');
             sessionStorage.setItem('userName', data.name);
             sessionStorage.setItem('role', data.role);
+            sessionStorage.setItem('token', data.token);
 
             // Gara Dashboard-itti dabarsuu
             if (data.role === 'admin') {

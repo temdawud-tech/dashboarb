@@ -139,16 +139,23 @@
             <div style="overflow-x: auto;">
                 <table id="userTable">
                     <thead>
-                        <tr>
-                            <th>Student ID</th>
-                            <th>Full Name</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
+    <tr>
+        <th>Student ID</th>
+        <th>Full Name</th>
+        <th>Email</th>
+        <th>Emergency Contact</th>
+        <th>Family Contact</th>
+        <th>Academic Skills</th>
+        <th>Spiritual Skills</th>
+        <th>Contribution</th>
+        <th>Status</th>
+        <th>Actions</th>
+    </tr>
+</thead>
                     <tbody id="userList"></tbody>
                 </table>
             </div>
+            
         </div>
 <section id="progress-admin">
     <h2>Student Qirath Progress</h2>
@@ -211,14 +218,14 @@
         </div>
     </div>
 <script>
-   // --- 1. DARK MODE LOGIC ---
+// --- 1. DARK MODE LOGIC ---
 function toggleDarkMode() {
     document.body.classList.toggle('dark-theme');
     const isDark = document.body.classList.contains('dark-theme');
     localStorage.setItem('adminTheme', isDark ? 'dark' : 'light');
 }
 
-// --- 2. SIDEBAR TOGGLE (Bilbila irratti) ---
+// --- 2. SIDEBAR TOGGLE ---
 function toggleMenu() {
     const sidebar = document.getElementById('mySidebar');
     sidebar.classList.toggle('active');
@@ -227,7 +234,7 @@ function toggleMenu() {
 // --- 3. SECTIONS DHOKSUU FI AGARSIISUU ---
 function toggleAddUser() {
     const section = document.getElementById('addUserSection');
-    section.style.display = section.style.display === 'none' ? 'block' : 'none';
+    section.style.display = (section.style.display === "none" || section.style.display === "") ? "block" : "none";
 }
 
 function toggleUpload() {
@@ -241,79 +248,194 @@ function toggleManageResources() {
     if(section.style.display === 'block') loadResources();
 }
 
-// --- 4. EXPORT TO EXCEL (CSV) ---
-function exportToCSV() {
-    let table = document.getElementById("userTable");
-    let rows = Array.from(table.rows);
-    let csv = rows.map(row => Array.from(row.cells).map(cell => cell.innerText).join(",")).join("\n");
-    
-    let blob = new Blob([csv], { type: "text/csv" });
-    let url = window.URL.createObjectURL(blob);
-    let a = document.createElement("a");
-    a.href = url;
-    a.download = "Students_List.csv";
-    a.click();
+function loadResources() {
+    const list = document.getElementById('adminResourceList');
+    if (!list) return;
+
+    const resources = JSON.parse(localStorage.getItem('adminResources') || '[]');
+    list.innerHTML = '';
+
+    if (resources.length === 0) {
+        list.innerHTML = '<tr><td colspan="4">No resources uploaded yet.</td></tr>';
+        return;
+    }
+
+    resources.forEach((resource, index) => {
+        list.innerHTML += `
+            <tr>
+                <td>${resource.title}</td>
+                <td>${resource.category}</td>
+                <td>${resource.fileName}</td>
+                <td>
+                    <button class="btn btn-danger" onclick="deleteResource(${index})">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
 }
 
-// --- 5. SEARCH TABLE LOGIC ---
-function searchTable() {
-    let input = document.getElementById("searchInput").value.toUpperCase();
-    let rows = document.getElementById("userList").getElementsByTagName("tr");
-    
-    for (let i = 0; i < rows.length; i++) {
-        let text = rows[i].innerText.toUpperCase();
-        rows[i].style.display = text.includes(input) ? "" : "none";
+function deleteResource(index) {
+    const resources = JSON.parse(localStorage.getItem('adminResources') || '[]');
+    resources.splice(index, 1);
+    localStorage.setItem('adminResources', JSON.stringify(resources));
+    loadResources();
+}
+
+function uploadResource() {
+    const title = document.getElementById('resourceTitle').value.trim();
+    const category = document.getElementById('resourceCategory').value;
+    const fileInput = document.getElementById('fileInput');
+    const statusBox = document.getElementById('uploadStatus');
+
+    if (!title || !fileInput.files.length) {
+        statusBox.textContent = 'Please add title and choose a file.';
+        statusBox.style.color = '#b91c1c';
+        return;
+    }
+
+    const resources = JSON.parse(localStorage.getItem('adminResources') || '[]');
+    resources.push({
+        title,
+        category,
+        fileName: fileInput.files[0].name
+    });
+    localStorage.setItem('adminResources', JSON.stringify(resources));
+
+    document.getElementById('resourceTitle').value = '';
+    fileInput.value = '';
+    statusBox.textContent = 'Resource uploaded successfully.';
+    statusBox.style.color = '#059669';
+
+    loadResources();
+}
+
+function changeAdminPassword() {
+    const oldPass = document.getElementById('oldPass').value;
+    const newPass = document.getElementById('newAdminPass').value;
+
+    if (!oldPass || !newPass) {
+        alert('Please fill both password fields.');
+        return;
+    }
+
+    if (newPass.length < 6) {
+        alert('New password must be at least 6 characters.');
+        return;
+    }
+
+    alert('Password change is saved locally for now.');
+    document.getElementById('oldPass').value = '';
+    document.getElementById('newAdminPass').value = '';
+}
+
+async function addNewUser() {
+    const studentId = document.getElementById('newId').value;
+    const name = document.getElementById('newName').value;
+
+    try {
+        const res = await fetch('http://localhost:5000/api/admin/add-student', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentId, name, status: 'active' })
+        });
+
+        if (res.ok) {
+            alert("Barataa haaraa galmeeffameera!");
+            
+            // SEARCH BAR QULQULLEESSI (Suuraa kee irratti rakkoo kan uume kanadha)
+            document.getElementById('searchInput').value = ""; 
+            
+            document.getElementById('newId').value = ""; 
+            document.getElementById('newName').value = "";
+            toggleAddUser();
+            
+            // Ragaa haaraa battalumatti fidi
+            await loadStudents(); 
+        }
+    } catch (err) {
+        alert("Error!");
     }
 }
+// --- 5. BARATAA BALLEESSUU (DELETE) ---
+async function deleteStudent(id) {
+    // Mirkaneessuuf
+    if (!confirm(`Barataa ID: ${id} qabu balleessuu barbaadduu?`)) return;
 
-// --- 6. BACKEND API CALLS ---
+    try {
+        const res = await fetch(`http://localhost:5000/api/admin/delete/${id}`, {
+            method: 'DELETE',
+        });
 
-// A. Barattoota fiduu
+        const data = await res.json();
+
+        if (res.ok) {
+            alert(data.message);
+            loadStudents(); // Table-icha irra deebii refresh gochuuf
+        } else {
+            alert("Balleessuun hin danda'amne: " + data.message);
+        }
+    } catch (err) {
+        console.error("Error:", err);
+        alert("Server waliin wal-qunnamuun hin danda'amne!");
+    }
+}
+// --- 6. BARATTOOTA FIDUU (TABLE LOAD) ---
 async function loadStudents() {
     try {
         const res = await fetch('http://localhost:5000/api/admin/students');
         const students = await res.json();
         
         const list = document.getElementById('userList');
-        const totalCount = document.getElementById('count-total');
-        const activeCount = document.getElementById('count-active');
-        const pendingCount = document.getElementById('count-pending');
-
-        list.innerHTML = "";
-        let active = 0, pending = 0;
+        list.innerHTML = ""; 
 
         students.forEach(user => {
-            if(user.status === 'active') active++; else pending++;
+            // Backend irraa maqaa dhufeen walitti fidi
+            const displayId = user.universityId || user.studentId || "---";
+            const displayName = user.fullName || user.name || "---";
+
             list.innerHTML += `
                 <tr>
-                    <td><b>${user.studentId}</b></td>
-                    <td>${user.name}</td>
+                    <td><b>${displayId}</b></td>
+                    <td>${displayName}</td>
+                    <td>${user.email || '---'}</td>
+                    <td>${user.eName || '---'} ${user.ePhone ? `(${user.ePhone})` : ''}</td>
+                    <td>${user.fName || '---'} ${user.fPhone ? `(${user.fPhone})` : ''}</td>
+                    <td>${user.academicSkill || '---'}</td>
+                    <td>${user.spiritualSkill || '---'}</td>
+                    <td>${user.contribution || '---'}</td>
                     <td><span class="badge ${user.status === 'active' ? 'badge-active' : 'badge-pending'}">${user.status}</span></td>
                     <td>
-                        ${user.status === 'pending' ? 
-                          `<button class="btn btn-primary" onclick="approveStudent('${user.studentId}')">Approve</button>` : 
-                          '<span style="color:green">Verified ✅</span>'}
+                        ${user.status === 'pending' ? `
+                        <button class="btn btn-primary" onclick="approveStudent('${displayId}')">
+                            <i class="fa fa-check"></i>
+                        </button>
+                        ` : ''}
+                        <button class="btn btn-danger" onclick="deleteStudent('${displayId}')">
+                            <i class="fa fa-trash"></i>
+                        </button>
                     </td>
                 </tr>`;
         });
 
-        totalCount.innerText = students.length;
-        activeCount.innerText = active;
-        pendingCount.innerText = pending;
+        // Lakkoofsa gubbaa update gochuuf
+        document.getElementById('count-total').innerText = students.length;
+        document.getElementById('count-active').innerText = students.filter(s => s.status === 'active').length;
+        document.getElementById('count-pending').innerText = students.filter(s => s.status === 'pending').length;
 
     } catch (err) {
-        console.error("Ragaa fiduun hin danda'amne:", err);
+        console.error("Dashboard ragaa fiduu dadhabe:", err);
     }
 }
-
-// B. Mirkaneessuu (Approve)
+// --- 7. MIRKANEESSUU (APPROVE) ---
 async function approveStudent(id) {
-    if(!confirm("Barataa kana mirkaneessuu barbaadduu?")) return;
+    if(!confirm("Mirkaneessuu barbaadduu?")) return;
     try {
-        const res = await fetch(`http://localhost:5000/api/admin/approve/${id}`, { method: 'PUT' });
-        if (res.ok) {
-            alert("Barataa mirkanaa'eera!");
-            loadStudents();
+        const res = await fetch(`http://localhost:5000/api/admin/approve?studentId=${id}`, { method: 'PUT' });
+        if (res.ok) { 
+            alert("Barataa mirkanaa'eera!"); 
+            loadStudents(); 
         }
     } catch (err) { alert("Error!"); }
 }
@@ -333,17 +455,49 @@ function logout() {
     window.location.href = "login.html";
 }
 
-// Window Load
-window.onload = () => {
+function showUsers() {
+    const usersCard = document.getElementById('userTable');
+    if (usersCard) {
+        usersCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+// --- 9. INITIALIZE ON LOAD ---
+window.addEventListener('DOMContentLoaded', () => {
+    // Session Check
+    if (sessionStorage.getItem('isLoggedIn') !== 'true') {
+        window.location.href = "login.html";
+    }
+    
+    // Load Data
     loadStudents();
-    // Theme check
-    if(localStorage.getItem('adminTheme') === 'dark') document.body.classList.add('dark-theme');
-};
-async function approveStudent(id) {
-    const res = await fetch(`http://localhost:5000/api/admin/approve?studentId=${encodeURIComponent(id)}`, {
-        method: 'PUT'
-    });
-}  
+
+    // Dark Mode Check
+    if (localStorage.getItem('adminTheme') === 'dark') {
+        document.body.classList.add('dark-theme');
+    }
+});
+function exportToCSV() {
+    let table = document.getElementById("userTable");
+    let rows = table.querySelectorAll("tr");
+    let csv = [];
+    
+    for (let i = 0; i < rows.length; i++) {
+        let row = [], cols = rows[i].querySelectorAll("td, th");
+        for (let j = 0; j < cols.length - 1; j++) { // '- 1' Action column akka hin dabalatamneef
+            row.push('"' + cols[j].innerText + '"');
+        }
+        csv.push(row.join(","));
+    }
+    
+    let csvContent = "data:text/csv;charset=utf-8," + csv.join("\n");
+    let encodedUri = encodeURI(csvContent);
+    let link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "Barattoota_AUWCMSJ.csv");
+    document.body.appendChild(link);
+    link.click();
+}
 </script>
 </body>
 </html>
