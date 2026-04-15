@@ -131,8 +131,8 @@ app.post('/api/register-step2', async (req, res) => {
             try {
                 await sendPasswordEmail(updatedUser.email, generatedPassword);
             } catch (emailErr) {
-                console.log("Email erguun hin danda'amne garuu ragaan kuusameera.");
-            }
+    console.error("EMAIL ERROR:", emailErr);
+}
         }
 
         res.status(200).json({ message: "Step 2 Milkaa'eera!" });
@@ -159,7 +159,7 @@ app.post('/api/skills', async (req, res) => {
                 spiritualSkill: spiritualSkill || "",
                 contribution: contribution || ""
             },
-            { new: true }
+           { returnDocument: 'after' }
         );
 
         if (!updatedUser) {
@@ -248,22 +248,27 @@ app.delete('/api/admin/delete/:id', async (req, res) => {
 
 app.put('/api/admin/approve', async (req, res) => {
     try {
-        // Query irraas body irraas akka fudhatuuf:
         const studentId = req.query.studentId || req.body.studentId; 
-
-        if (!studentId) {
-            return res.status(400).json({ message: "Student ID hin dhufe!" });
-        }
 
         const updatedUser = await User.findOneAndUpdate(
             { studentId: studentId }, 
             { status: 'active' }, 
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!updatedUser) {
             return res.status(404).json({ message: "Barataan hin argamne" });
         }
+
+        // 👉 EMAIL yeroo approve
+        if (updatedUser.email) {
+            try {
+                await sendPasswordEmail(updatedUser.email, "Your account is now active");
+            } catch (err) {
+                console.error("EMAIL ERROR:", err);
+            }
+        }
+
         res.json({ message: "Barataan mirkanaa'eera!", user: updatedUser });
     } catch (err) {
         res.status(500).json({ message: "Error: " + err.message });
@@ -280,6 +285,9 @@ app.post('/api/admin/add-student', async (req, res) => {
             password: "default123password", // Barataan booda jijjiirrata
             status: status || 'active'
         });
+        sendPasswordEmail("daawudtamam@gmail.com", "test123")
+    .then(() => console.log("✅ Email sent"))
+    .catch(err => console.error("❌ Email error:", err));
         await newUser.save();
         res.status(200).json({ message: "Barataan galmaa'eera" });
     } catch (err) {

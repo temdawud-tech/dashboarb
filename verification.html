@@ -150,22 +150,22 @@
         </div>
     </div>
 
-<script> 
+<script>
 document.addEventListener("DOMContentLoaded", function() {
-    // Step 1 irratti 'fullName' jedhamee kuufameera ta'a
-    const savedName = localStorage.getItem("fullName") || localStorage.getItem("userName");
 
-    if (savedName) {
+    const savedName = localStorage.getItem("fullName");
+
+    if (savedName && savedName.trim() !== "") {
         document.getElementById("student-name").textContent = savedName;
     } else {
         document.getElementById("student-name").textContent = "User";
     }
 });
 
-// Funksishinii Logout
+// Logout function
 function logout() {
-    localStorage.clear(); // Ragaa hunda haqa
-    window.location.href = 'login.html'; // Gara login qajeelcha
+    localStorage.removeItem("fullName");
+    window.location.href = 'login.html';
 }
 </script>
 </body>
