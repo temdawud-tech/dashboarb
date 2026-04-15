@@ -127,15 +127,14 @@ async function handleLogin(event) {
 
         const data = await res.json();
 
-        if (res.ok && data.token) {
+        if (res.ok) {
             // Ragaalee kuusuu
-            sessionStorage.setItem('token', data.token);
             sessionStorage.setItem('userName', data.name);
             sessionStorage.setItem('role', data.role);
 
             // Gara Dashboard-itti dabarsuu
             if (data.role === 'admin') {
-                window.location.href = 'admindashboard.html';
+                window.location.href = 'index.html';
             } else {
                 window.location.href = 'userdashboard.html';
             }

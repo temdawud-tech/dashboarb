@@ -89,75 +89,69 @@
 </div>
 
 <script>
-    // Gara duubatti (Register Page) deebi'uuf
-    function goBack() {
-        window.location.href = 'register.html'; 
+function goBack() {
+    window.location.href = 'register.html';
+}
+
+   async function checkAndGo() {
+    const nameRegex = /^[A-Za-z\s]+$/;
+    const phoneRegex = /^[0-9]{10,13}$/;
+
+    // 1. ID barataa localStorage irraa fiduu
+    const studentId = localStorage.getItem('tempStudentId');
+
+    const data = {
+        universityId: studentId, 
+        eName: document.getElementById('eName').value.trim(),
+        ePhone: document.getElementById('ePhone').value.trim(),
+        eRel: document.getElementById('eRelationship').value.trim(),
+        fName: document.getElementById('fName').value.trim(),
+        fPhone: document.getElementById('fPhone').value.trim(),
+        fRel: document.getElementById('fRelationship').value.trim()
+    };
+
+    // Validation
+    if (!studentId) {
+        alert("Ragaan Step 1 hin jiru. Maaloo irra deebi'ii galmaa'i.");
+        window.location.href = 'register.html';
+        return;
     }
 
-    async function checkAndGo() {
-        const nameRegex = /^[A-Za-z\s]+$/;
-        const phoneRegex = /^[0-9]{10,13}$/;
+    if (!data.eName || !data.ePhone || !data.fName || !data.fPhone) {
+        alert("Maaloo, ragaa hunda guutaa!");
+        return;
+    }
 
-        // 1. ID barataa localStorage irraa fiduu (Step 1 irratti waan save gooneef)
-        const studentId = localStorage.getItem('tempStudentId');
+    try {
+        const nextBtn = document.querySelector(".btn-next");
+        nextBtn.disabled = true;
+        nextBtn.innerText = "Ergamaa jira...";
 
-        const data = {
-            universityId: studentId, // KUN MURTEESSAADHA!
-            eName: document.getElementById('eName').value.trim(),
-            ePhone: document.getElementById('ePhone').value.trim(),
-            eRel: document.getElementById('eRelationship').value.trim(),
-            fName: document.getElementById('fName').value.trim(),
-            fPhone: document.getElementById('fPhone').value.trim(),
-            fRel: document.getElementById('fRelationship').value.trim()
-        };
+        const response = await fetch('http://127.0.0.1:5000/api/register-step2', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
 
-        // Validation
-        if (!studentId) {
-            alert("Ragaan Step 1 hin jiru. Maaloo irra deebi'ii galmaa'i.");
-            window.location.href = 'register.html';
-            return;
-        }
+        const result = await response.json();
 
-        if (!data.eName || !data.ePhone || !data.fName || !data.fPhone) {
-            alert("Maaloo, bakka duwwaa guutaa!");
-            return;
-        }
-
-        if (!nameRegex.test(data.eName) || !phoneRegex.test(data.ePhone)) {
-            alert("Maaloo, maqaa fi bilbila sirrii galchaa!");
-            return;
-        }
-
-        try {
-            const nextBtn = document.querySelector(".btn-next");
-            nextBtn.disabled = true;
-            nextBtn.innerText = "Ergamaa jira...";
-
-            // 2. URL Guutuu fayyadami (http://localhost:5000)
-            const response = await fetch('http://localhost:5000/api/register-step2', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                alert("Step 2 milkaa'eera!");
-                window.location.href = 'skill.html'; 
-            } else {
-                alert("Server Error: " + (result.error || "Ragaan hin fudhatamne"));
-                nextBtn.disabled = false;
-                nextBtn.innerText = "Next Step";
-            }
-        } catch (error) {
-            alert("Error: Gara server-tti erguun hin danda'amne. Server kee banuu kee mirkaneessi!");
-            console.error(error);
-            const nextBtn = document.querySelector(".btn-next");
+        if (response.ok) {
+            alert("Step 2 milkaa'eera! Password kee Email keerratti siif ergameera.");
+            window.location.href = 'skill.html'; 
+        } else {
+            // Database error yoo ta'e asitti sitti hima
+            alert("Rakkon uumame: " + (result.error || "Ragaan hin fudhatamne"));
             nextBtn.disabled = false;
             nextBtn.innerText = "Next Step";
         }
+    } catch (error) {
+        alert("Error: Server waliin wal quunnamuun hin danda'amne!");
+        console.error(error);
+        const nextBtn = document.querySelector(".btn-next");
+        nextBtn.disabled = false;
+        nextBtn.innerText = "Next Step";
     }
+}
 </script>
 </body>
 </html>
