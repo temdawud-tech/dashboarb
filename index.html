@@ -122,6 +122,7 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                 <input type="text" id="newId" placeholder="Student ID (AU/123/15)" class="search-bar" style="padding-left:15px;">
                 <input type="text" id="newName" placeholder="Full Name" class="search-bar" style="padding-left:15px;">
+                <input type="password" id="newPassword" placeholder="Password" class="search-bar" style="padding-left:15px;">
                 <button class="btn btn-primary" onclick="addNewUser()">Save Student</button>
             </div>
         </div>
@@ -132,8 +133,23 @@
                     <i class="fa fa-search"></i>
                     <input type="text" id="searchInput" onkeyup="searchTable()" class="search-bar" placeholder="Search student...">
                 </div>
-                <button class="btn btn-export" onclick="exportToCSV()"><i class="fa fa-file-excel"></i> Export Excel</button>
+                <button class="btn btn-export" onclick="toggleExportColumns()"><i class="fa fa-file-excel"></i> Export Excel</button>
                 <button class="btn btn-primary" onclick="toggleAddUser()"><i class="fa fa-plus"></i> Add User</button>
+            </div>
+
+            <div id="exportColumnsSection" style="display:none; margin-bottom: 20px; padding: 15px; border: 1px solid #cbd5e1; border-radius: 10px;">
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 15px;">
+                    <label><input type="checkbox" class="export-col" value="1" checked> Student ID</label>
+                    <label><input type="checkbox" class="export-col" value="2" checked> Full Name</label>
+                    <label><input type="checkbox" class="export-col" value="3" checked> Email</label>
+                    <label><input type="checkbox" class="export-col" value="4" checked> Emergency Contact</label>
+                    <label><input type="checkbox" class="export-col" value="5" checked> Family Contact</label>
+                    <label><input type="checkbox" class="export-col" value="6" checked> Academic Skills</label>
+                    <label><input type="checkbox" class="export-col" value="7" checked> Spiritual Skills</label>
+                    <label><input type="checkbox" class="export-col" value="8" checked> Contribution</label>
+                    <label><input type="checkbox" class="export-col" value="9" checked> Status</label>
+                </div>
+                <button class="btn btn-export" onclick="exportToCSV()">Download Selected Columns</button>
             </div>
 
             <div style="overflow-x: auto;">
@@ -143,6 +159,7 @@
         <th>Student ID</th>
         <th>Full Name</th>
         <th>Email</th>
+        <th>Password</th>
         <th>Emergency Contact</th>
         <th>Family Contact</th>
         <th>Academic Skills</th>
@@ -218,6 +235,33 @@
         </div>
     </div>
 <script>
+async function fetchWithApiFallback(path, options) {
+    const host = window.location.hostname;
+    const candidates = [
+        'http://127.0.0.1:5000',
+        'http://localhost:5000',
+        host && host !== 'localhost' && host !== '127.0.0.1' ? `http://${host}:5000` : null
+    ].filter(Boolean);
+
+    let lastError = null;
+    for (const base of candidates) {
+        try {
+            return await fetch(`${base}${path}`, options);
+        } catch (err) {
+            lastError = err;
+        }
+    }
+
+    throw lastError || new Error('Server connection failed.');
+}
+
+function formatProgressTime(value) {
+    if (!value) return '---';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString();
+}
+
 // --- 1. DARK MODE LOGIC ---
 function toggleDarkMode() {
     document.body.classList.toggle('dark-theme');
@@ -283,32 +327,37 @@ function deleteResource(index) {
     loadResources();
 }
 
-function uploadResource() {
-    const title = document.getElementById('resourceTitle').value.trim();
+async function uploadResource() {
+    const title = document.getElementById('resourceTitle').value;
     const category = document.getElementById('resourceCategory').value;
-    const fileInput = document.getElementById('fileInput');
-    const statusBox = document.getElementById('uploadStatus');
+    const file = document.getElementById('fileInput').files[0];
 
-    if (!title || !fileInput.files.length) {
-        statusBox.textContent = 'Please add title and choose a file.';
-        statusBox.style.color = '#b91c1c';
+    if (!title.trim()) {
+        alert("Please enter a resource title.");
         return;
     }
 
-    const resources = JSON.parse(localStorage.getItem('adminResources') || '[]');
-    resources.push({
-        title,
-        category,
-        fileName: fileInput.files[0].name
+    if (!file) {
+        alert("Please choose a file before uploading.");
+        return;
+    }
+
+    const res = await fetchWithApiFallback('/api/admin/resources', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            title,
+            category,
+            fileName: file.name
+        })
     });
-    localStorage.setItem('adminResources', JSON.stringify(resources));
 
-    document.getElementById('resourceTitle').value = '';
-    fileInput.value = '';
-    statusBox.textContent = 'Resource uploaded successfully.';
-    statusBox.style.color = '#059669';
+    if (!res.ok) {
+        alert("Upload failed.");
+        return;
+    }
 
-    loadResources();
+    alert("Uploaded!");
 }
 
 function changeAdminPassword() {
@@ -331,14 +380,25 @@ function changeAdminPassword() {
 }
 
 async function addNewUser() {
-    const studentId = document.getElementById('newId').value;
-    const name = document.getElementById('newName').value;
+    const studentId = document.getElementById('newId').value.trim();
+    const name = document.getElementById('newName').value.trim();
+    const password = document.getElementById('newPassword').value.trim();
+
+    if (!studentId.trim() || !name.trim() || !password.trim()) {
+        alert("Please fill in student ID, full name, and password.");
+        return;
+    }
+
+    if (password.length < 6) {
+        alert("Password must be at least 6 characters.");
+        return;
+    }
 
     try {
-        const res = await fetch('http://localhost:5000/api/admin/add-student', {
+        const res = await fetchWithApiFallback('/api/admin/add-student', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ studentId, name, status: 'active' })
+            body: JSON.stringify({ studentId, name, password, status: 'active' })
         });
 
         if (res.ok) {
@@ -349,6 +409,7 @@ async function addNewUser() {
             
             document.getElementById('newId').value = ""; 
             document.getElementById('newName').value = "";
+            document.getElementById('newPassword').value = "";
             toggleAddUser();
             
             // Ragaa haaraa battalumatti fidi
@@ -364,7 +425,7 @@ async function deleteStudent(id) {
     if (!confirm(`Barataa ID: ${id} qabu balleessuu barbaadduu?`)) return;
 
     try {
-        const res = await fetch(`http://localhost:5000/api/admin/delete/${id}`, {
+        const res = await fetchWithApiFallback(`/api/admin/delete/${id}`, {
             method: 'DELETE',
         });
 
@@ -384,7 +445,7 @@ async function deleteStudent(id) {
 // --- 6. BARATTOOTA FIDUU (TABLE LOAD) ---
 async function loadStudents() {
     try {
-        const res = await fetch('http://localhost:5000/api/admin/students');
+        const res = await fetchWithApiFallback('/api/admin/students');
         const students = await res.json();
         
         const list = document.getElementById('userList');
@@ -394,21 +455,25 @@ async function loadStudents() {
             // Backend irraa maqaa dhufeen walitti fidi
             const displayId = user.universityId || user.studentId || "---";
             const displayName = user.fullName || user.name || "---";
+            const emergencyContact = `${user.eName || '---'} ${user.ePhone ? `(${user.ePhone})` : ''}`.trim();
+            const familyContact = `${user.fName || '---'} ${user.fPhone ? `(${user.fPhone})` : ''}`.trim();
+            const status = String(user.status || 'pending').trim().toLowerCase();
 
             list.innerHTML += `
                 <tr>
                     <td><b>${displayId}</b></td>
                     <td>${displayName}</td>
                     <td>${user.email || '---'}</td>
-                    <td>${user.eName || '---'} ${user.ePhone ? `(${user.ePhone})` : ''}</td>
-                    <td>${user.fName || '---'} ${user.fPhone ? `(${user.fPhone})` : ''}</td>
+                    <td>${user.password || '---'}</td>
+                    <td>${emergencyContact}</td>
+                    <td>${familyContact}</td>
                     <td>${user.academicSkill || '---'}</td>
                     <td>${user.spiritualSkill || '---'}</td>
                     <td>${user.contribution || '---'}</td>
-                    <td><span class="badge ${user.status === 'active' ? 'badge-active' : 'badge-pending'}">${user.status}</span></td>
+                    <td><span class="badge ${status === 'active' ? 'badge-active' : 'badge-pending'}">${status}</span></td>
                     <td>
-                        ${user.status === 'pending' ? `
-                        <button class="btn btn-primary" onclick="approveStudent('${displayId}')">
+                        ${status === 'pending' ? `
+                        <button class="btn btn-primary" onclick="approveStudent('${displayId}', this)">
                             <i class="fa fa-check"></i>
                         </button>
                         ` : ''}
@@ -421,32 +486,65 @@ async function loadStudents() {
 
         // Lakkoofsa gubbaa update gochuuf
         document.getElementById('count-total').innerText = students.length;
-        document.getElementById('count-active').innerText = students.filter(s => s.status === 'active').length;
-        document.getElementById('count-pending').innerText = students.filter(s => s.status === 'pending').length;
+        document.getElementById('count-active').innerText = students.filter(s => String(s.status || '').trim().toLowerCase() === 'active').length;
+        document.getElementById('count-pending').innerText = students.filter(s => String(s.status || '').trim().toLowerCase() === 'pending').length;
 
     } catch (err) {
         console.error("Dashboard ragaa fiduu dadhabe:", err);
     }
 }
 // --- 7. MIRKANEESSUU (APPROVE) ---
-async function approveStudent(id) {
+async function approveStudent(id, buttonEl) {
     if(!confirm("Mirkaneessuu barbaadduu?")) return;
+
+    if (buttonEl) {
+        buttonEl.disabled = true;
+        buttonEl.style.opacity = '0.7';
+    }
+
     try {
-        const res = await fetch(`http://localhost:5000/api/admin/approve?studentId=${id}`, { method: 'PUT' });
-        if (res.ok) { 
-            alert("Barataa mirkanaa'eera!"); 
-            loadStudents(); 
+        const res = await fetchWithApiFallback(`/api/admin/approve?studentId=${encodeURIComponent(id)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentId: id })
+        });
+        const raw = await res.text();
+        let data = {};
+
+        try {
+            data = raw ? JSON.parse(raw) : {};
+        } catch {
+            data = { message: raw || "Unknown server response." };
         }
-    } catch (err) { alert("Error!"); }
+
+        if (res.ok) { 
+            alert(data.message || "Barataa mirkanaa'eera!"); 
+            loadStudents(); 
+        } else {
+            alert(data.message || "Pending student could not be approved.");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Error!");
+    } finally {
+        if (buttonEl) {
+            buttonEl.disabled = false;
+            buttonEl.style.opacity = '';
+        }
+    }
 }
 
 // C. Announcement Update
 async function updateNews() {
     const content = document.getElementById('newsContent').value;
-    if(!content) return alert("Barreeffama galchi!");
-    
-    // Backend API kee irratti hunda'a
-    alert("Announcement Updated: " + content);
+
+    await fetchWithApiFallback('/api/admin/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ news: content })
+    });
+
+    alert("News updated!");
 }
 
 // D. Logout
@@ -462,6 +560,93 @@ function showUsers() {
     }
 }
 
+function searchTable() {
+    const input = document.getElementById('searchInput');
+    const filter = (input?.value || '').toLowerCase();
+    const rows = document.querySelectorAll('#userList tr');
+
+    rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(filter) ? '' : 'none';
+    });
+}
+
+function toggleExportColumns() {
+    const section = document.getElementById('exportColumnsSection');
+    if (!section) return;
+    section.style.display = section.style.display === 'none' || section.style.display === '' ? 'block' : 'none';
+}
+
+async function loadProgressMessages() {
+    const table = document.getElementById('adminProgressTable');
+    if (!table) return;
+
+    try {
+        const res = await fetchWithApiFallback('/api/progress');
+        const contentType = res.headers.get('content-type') || '';
+        if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(errorText || 'Progress load failed');
+        }
+        if (!contentType.includes('application/json')) {
+            throw new Error('Progress response was not JSON. Restart the Node server and try again.');
+        }
+
+        const rows = await res.json();
+        table.innerHTML = '';
+
+        if (!Array.isArray(rows) || rows.length === 0) {
+            table.innerHTML = '<tr><td colspan="5" style="padding: 10px;">No progress messages yet.</td></tr>';
+            return;
+        }
+
+        rows.slice().reverse().forEach((item, index) => {
+            const originalIndex = rows.length - 1 - index;
+            table.innerHTML += `
+                <tr>
+                    <td style="padding: 10px;">${item.student || 'Unknown'}</td>
+                    <td style="padding: 10px;">${item.level || '---'}</td>
+                    <td style="padding: 10px;">${item.detail || '---'}</td>
+                    <td style="padding: 10px;">${formatProgressTime(item.createdAt)}</td>
+                    <td style="padding: 10px;">
+                        <button class="btn btn-danger" onclick="deleteProgressMessage(${originalIndex})">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+    } catch (err) {
+        console.error(err);
+        table.innerHTML = `<tr><td colspan="5" style="padding: 10px;">${err.message || 'Progress messages could not be loaded.'}</td></tr>`;
+    }
+}
+
+async function deleteProgressMessage(progressIndex) {
+    if (!Number.isInteger(progressIndex) || progressIndex < 0) {
+        alert("Progress index is missing.");
+        return;
+    }
+
+    if (!confirm("Delete this progress message?")) return;
+
+    try {
+        const res = await fetchWithApiFallback(`/api/progress/${progressIndex}`, { method: 'DELETE' });
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.message || "Progress delete failed.");
+            return;
+        }
+
+        alert(data.message || "Progress deleted successfully.");
+        loadProgressMessages();
+    } catch (err) {
+        console.error(err);
+        alert("Progress delete failed.");
+    }
+}
+
 // --- 9. INITIALIZE ON LOAD ---
 window.addEventListener('DOMContentLoaded', () => {
     // Session Check
@@ -471,6 +656,7 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Load Data
     loadStudents();
+    loadProgressMessages();
 
     // Dark Mode Check
     if (localStorage.getItem('adminTheme') === 'dark') {
@@ -478,18 +664,38 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 });
 function exportToCSV() {
-    let table = document.getElementById("userTable");
-    let rows = table.querySelectorAll("tr");
-    let csv = [];
-    
-    for (let i = 0; i < rows.length; i++) {
-        let row = [], cols = rows[i].querySelectorAll("td, th");
-        for (let j = 0; j < cols.length - 1; j++) { // '- 1' Action column akka hin dabalatamneef
-            row.push('"' + cols[j].innerText + '"');
-        }
-        csv.push(row.join(","));
+    const table = document.getElementById("userTable");
+    const selectedColumns = Array.from(document.querySelectorAll('.export-col:checked'))
+        .map(input => Number(input.value));
+    const rowsToExport = Array.from(table.querySelectorAll('#userList tr'))
+        .filter(row => row.style.display !== 'none');
+
+    if (selectedColumns.length === 0) {
+        alert("Please select at least one column to export.");
+        return;
     }
-    
+
+    const csv = [];
+    const headers = selectedColumns.map(index => {
+        const th = table.querySelectorAll('thead th')[index - 1];
+        return `"${th.innerText.trim()}"`;
+    });
+    csv.push(headers.join(","));
+
+    rowsToExport.forEach(row => {
+        const cells = Array.from(row.querySelectorAll('td'));
+        const values = selectedColumns.map(index => {
+            const col = cells[index - 1];
+            return `"${(col?.innerText || '').replace(/"/g, '""').trim()}"`;
+        });
+        csv.push(values.join(","));
+    });
+
+    if (csv.length === 1) {
+        alert("Please select at least one student or make sure the table has visible rows.");
+        return;
+    }
+
     let csvContent = "data:text/csv;charset=utf-8," + csv.join("\n");
     let encodedUri = encodeURI(csvContent);
     let link = document.createElement("a");

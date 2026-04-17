@@ -155,7 +155,13 @@ async function fetchWithApiFallback(path, options) {
         const result = await response.json();
 
         if (response.ok) {
-            alert("Step 2 milkaa'eera! Password kee Email keerratti siif ergameera.");
+            if (result.emailSent) {
+                alert("Step 2 milkaa'eera! Password kee email keerratti siif ergameera.");
+            } else {
+                const fallbackPassword = result.generatedPassword ? `\nTemporary password: ${result.generatedPassword}` : "";
+                const fallbackReason = result.emailError ? `\nReason: ${result.emailError}` : "";
+                alert(`Step 2 milkaa'eera, garuu email hin ergamne.${fallbackReason}${fallbackPassword}`);
+            }
             window.location.href = 'skill.html'; 
         } else {
             // Database error yoo ta'e asitti sitti hima

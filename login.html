@@ -112,8 +112,8 @@ async function handleLogin(event) {
     const loginBtn = document.getElementById('loginBtn');
     
     // Ragaalee input irraa fuuchuu (IDs sirreeffamaniiru)
-    const studentId = document.getElementById('userId').value;
-    const password = document.getElementById('passwordField').value;
+    const studentId = document.getElementById('userId').value.trim();
+    const password = document.getElementById('passwordField').value.trim();
 
     loginBtn.innerText = "Checking...";
     loginBtn.disabled = true;
@@ -149,6 +149,9 @@ async function handleLogin(event) {
             sessionStorage.setItem('userName', data.name);
             sessionStorage.setItem('role', data.role);
             sessionStorage.setItem('token', data.token);
+            sessionStorage.setItem('studentId', data.studentId || '');
+            localStorage.setItem('currentUser', data.name);
+            localStorage.setItem('currentProfilePic', data.profilePic || '');
 
             // Gara Dashboard-itti dabarsuu
             if (data.role === 'admin') {

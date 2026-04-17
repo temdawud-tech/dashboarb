@@ -6,6 +6,8 @@ const cors = require('cors');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 app.use(express.json());
@@ -21,6 +23,8 @@ const userSchema = new mongoose.Schema({
     studentId: { type: String, required: true, unique: true, trim: true },
     name: { type: String, required: true },
     email: { type: String },
+    gender: { type: String, enum: ['Male', 'Female', ''], default: '' },
+    profilePic: { type: String, default: '' },
     password: { type: String, required: true },
     role: { type: String, enum: ['student', 'admin'], default: 'student' },
     status: { type: String, enum: ['pending', 'active', 'blocked'], default: 'pending' },
@@ -37,6 +41,23 @@ const userSchema = new mongoose.Schema({
 });
 
 const User = mongoose.model('User', userSchema);
+
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+
+    if (!token) {
+        return res.status(401).json({ message: 'Authentication token is required.' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || "change_this_in_env");
+        req.user = decoded;
+        next();
+    } catch (err) {
+        return res.status(401).json({ message: 'Invalid or expired token.' });
+    }
+}
 
 const ContactEmergency = mongoose.model('ContactEmergency', new mongoose.Schema({
     universityId: { type: String, required: true },
@@ -58,6 +79,10 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendPasswordEmail = async (userEmail, generatedPassword) => {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        throw new Error('Email credentials are missing in .env');
+    }
+
     const mailOptions = {
         from: process.env.EMAIL_USER,
         to: userEmail,
@@ -66,11 +91,38 @@ const sendPasswordEmail = async (userEmail, generatedPassword) => {
     };
     return transporter.sendMail(mailOptions);
 };
+const resourceSchema = new mongoose.Schema({
+    title: String,
+    category: String,
+    fileName: String,
+    fileUrl: String // 👉 kana dabaluu
+});
+const Resource = mongoose.model('Resource', resourceSchema);
+
+// ADD
+app.post('/api/admin/resources', async (req, res) => {
+    try {
+        const newRes = new Resource(req.body);
+        await newRes.save();
+        res.json({ message: "Uploaded" });
+    } catch (err) {
+        res.status(500).json({ message: "Upload failed" });
+    }
+});
+
+// GET (user)
+app.get('/api/resources', async (req, res) => {
+    const data = await Resource.find();
+    res.json(data);
+});
 
 // 4. API ENDPOINTS
 app.post('/api/register-step1', async (req, res) => {
     try {
-        const { universityId, email, fullName } = req.body;
+        const universityId = String(req.body.universityId || '').trim();
+        const email = String(req.body.email || '').trim();
+        const fullName = String(req.body.fullName || '').trim();
+        const gender = String(req.body.gender || '').trim();
         const existing = await User.findOne({ studentId: universityId });
         if (existing) return res.status(400).json({ message: "ID is already registered!" });
 
@@ -78,6 +130,7 @@ app.post('/api/register-step1', async (req, res) => {
             studentId: universityId,
             name: fullName,
             email: email,
+            gender: gender === 'Male' || gender === 'Female' ? gender : '',
             password: "temporary_until_step2",
             status: 'pending'
         });
@@ -127,15 +180,26 @@ app.post('/api/register-step2', async (req, res) => {
         }
 
         // 4. Email erguu
+        let emailSent = false;
+        let emailError = "";
         if (updatedUser.email) {
             try {
                 await sendPasswordEmail(updatedUser.email, generatedPassword);
+                emailSent = true;
             } catch (emailErr) {
-    console.error("EMAIL ERROR:", emailErr);
-}
+                console.error("EMAIL ERROR:", emailErr);
+                emailError = emailErr.message || "Password email could not be sent.";
+            }
+        } else {
+            emailError = "No email address was saved for this user.";
         }
 
-        res.status(200).json({ message: "Step 2 Milkaa'eera!" });
+        res.status(200).json({
+            message: "Step 2 Milkaa'eera!",
+            emailSent,
+            emailError,
+            generatedPassword: emailSent ? undefined : generatedPassword
+        });
 
     } catch (err) {
         console.error("DATABASE ERROR:", err);
@@ -174,7 +238,9 @@ app.post('/api/skills', async (req, res) => {
 
 app.post('/api/login', async (req, res) => {
     try {
-        const { studentId, password } = req.body;
+        const studentId = String(req.body.studentId || '').trim();
+        const password = String(req.body.password || '').trim();
+
         const user = await User.findOne({ studentId });
         if (!user) return res.status(400).json({ message: "ID hin argamne!" });
         if (user.status !== 'active') return res.status(403).json({ message: "Admin mirkaneessuu eagi!" });
@@ -187,9 +253,85 @@ app.post('/api/login', async (req, res) => {
             { expiresIn: "2h" }
         );
 
-        res.json({ message: "Success", name: user.name, role: user.role, token });
+        res.json({
+            message: "Success",
+            name: user.name,
+            role: user.role,
+            studentId: user.studentId,
+            profilePic: user.profilePic || "",
+            token
+        });
     } catch (err) {
         res.status(500).json({ message: "Server Error" });
+    }
+});
+
+app.get('/api/user/me', authenticateToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.userId).select('name studentId email profilePic');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ message: 'User profile could not be loaded.' });
+    }
+});
+
+app.put('/api/user/profile-photo', authenticateToken, async (req, res) => {
+    try {
+        const profilePic = String(req.body.profilePic || '').trim();
+
+        if (!profilePic) {
+            return res.status(400).json({ message: 'Profile image is required.' });
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user.userId,
+            { profilePic },
+            { new: true }
+        ).select('profilePic');
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        res.json({ message: 'Profile photo updated.', profilePic: updatedUser.profilePic || '' });
+    } catch (err) {
+        res.status(500).json({ message: 'Profile photo could not be updated.' });
+    }
+});
+
+app.put('/api/user/change-password', authenticateToken, async (req, res) => {
+    try {
+        const currentPassword = String(req.body.currentPassword || '').trim();
+        const newPassword = String(req.body.newPassword || '').trim();
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ message: 'Current password and new password are required.' });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ message: 'New password must be at least 6 characters.' });
+        }
+
+        const user = await User.findById(req.user.userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Current password is incorrect.' });
+        }
+
+        user.password = await bcrypt.hash(newPassword, 10);
+        await user.save();
+
+        res.json({ message: 'Password changed successfully.' });
+    } catch (err) {
+        res.status(500).json({ message: 'Password could not be changed.' });
     }
 });
 
@@ -246,14 +388,18 @@ app.delete('/api/admin/delete/:id', async (req, res) => {
     }
 });
 
-app.put('/api/admin/approve', async (req, res) => {
+async function approveStudentHandler(req, res) {
     try {
-        const studentId = req.query.studentId || req.body.studentId; 
+        const studentId = String(req.query.studentId || req.body?.studentId || '').trim();
+
+        if (!studentId) {
+            return res.status(400).json({ message: "Student ID is required." });
+        }
 
         const updatedUser = await User.findOneAndUpdate(
             { studentId: studentId }, 
             { status: 'active' }, 
-            { returnDocument: 'after' }
+            { new: true }
         );
 
         if (!updatedUser) {
@@ -273,24 +419,147 @@ app.put('/api/admin/approve', async (req, res) => {
     } catch (err) {
         res.status(500).json({ message: "Error: " + err.message });
     }
-});
+}
+
+app.put('/api/admin/approve', approveStudentHandler);
+app.post('/api/admin/approve', approveStudentHandler);
 app.post('/api/admin/add-student', async (req, res) => {
     try {
-        const { studentId, name, status } = req.body;
-        // User schema keessatti password dirqama (required) waan ta'eef 
-        // asirratti password feetaa tokko itti kennuun dirqama.
+        const studentId = String(req.body.studentId || '').trim();
+        const name = String(req.body.name || '').trim();
+        const password = String(req.body.password || '').trim();
+        const status = req.body.status;
+
+        if (!studentId || !name || !password) {
+            return res.status(400).json({ error: "Student ID, name, and password are required." });
+        }
+
+        const existingUser = await User.findOne({ studentId });
+        if (existingUser) {
+            return res.status(400).json({ error: "Student ID already exists." });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = new User({
             studentId,
             name,
-            password: "default123password", // Barataan booda jijjiirrata
+            password: hashedPassword,
             status: status || 'active'
         });
-        sendPasswordEmail("daawudtamam@gmail.com", "test123")
-    .then(() => console.log("✅ Email sent"))
-    .catch(err => console.error("❌ Email error:", err));
+
         await newUser.save();
         res.status(200).json({ message: "Barataan galmaa'eera" });
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+let latestNews = "Beeksisni ammaan tana hin jiru.";
+
+app.post('/api/admin/news', (req, res) => {
+    latestNews = req.body.news;
+    res.json({ message: "News updated" });
+});
+
+app.get('/api/news', (req, res) => {
+    res.json({ news: latestNews });
+});
+app.get('/api/statistics', async (req, res) => {
+    try {
+        const students = await User.find({ role: 'student' }).select('gender status').lean();
+        const total = students.length;
+        const active = students.filter(student => student.status === 'active').length;
+        const male = students.filter(student => student.gender === 'Male').length;
+        const female = students.filter(student => student.gender === 'Female').length;
+
+        res.json({ total, active, male, female });
+    } catch (err) {
+        res.status(500).json({ message: "Statistics hin fe'amne" });
+    }
+});
+// PROGRESS
+app.post('/api/progress', (req, res) => {
+    try {
+        const progressFile = path.join(__dirname, 'progress.json');
+        const student = String(req.body.student || '').trim();
+        const level = String(req.body.level || '').trim();
+        const detail = String(req.body.detail || '').trim();
+
+        if (!student || !level || !detail) {
+            return res.status(400).json({ message: "Student, level, and detail are required." });
+        }
+
+        const progress = {
+            student,
+            level,
+            detail,
+            createdAt: new Date().toISOString()
+        };
+
+        let all = [];
+
+        if (fs.existsSync(progressFile)) {
+            const data = fs.readFileSync(progressFile, 'utf8');
+            const parsed = JSON.parse(data);
+            all = Array.isArray(parsed) ? parsed : [];
+        }
+
+        all.push(progress);
+
+        fs.writeFileSync(progressFile, JSON.stringify(all, null, 2));
+
+        res.json({ message: "Saved" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Progress hin save goone" });
+    }
+});
+
+app.get('/api/progress', (req, res) => {
+    try {
+        const progressFile = path.join(__dirname, 'progress.json');
+
+        if (!fs.existsSync(progressFile)) {
+            return res.json([]);
+        }
+
+        const data = fs.readFileSync(progressFile, 'utf8');
+        const parsed = JSON.parse(data);
+        const rows = Array.isArray(parsed) ? parsed : [];
+
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Progress hin fe'amne" });
+    }
+});
+
+app.delete('/api/progress/:index', (req, res) => {
+    try {
+        const progressFile = path.join(__dirname, 'progress.json');
+        const index = Number(req.params.index);
+
+        if (!Number.isInteger(index) || index < 0) {
+            return res.status(400).json({ message: "Valid progress index is required." });
+        }
+
+        if (!fs.existsSync(progressFile)) {
+            return res.status(404).json({ message: "Progress file not found." });
+        }
+
+        const data = fs.readFileSync(progressFile, 'utf8');
+        const parsed = JSON.parse(data);
+        const rows = Array.isArray(parsed) ? parsed : [];
+
+        if (index >= rows.length) {
+            return res.status(404).json({ message: "Progress message not found." });
+        }
+
+        rows.splice(index, 1);
+        fs.writeFileSync(progressFile, JSON.stringify(rows, null, 2));
+        res.json({ message: "Progress deleted successfully." });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Progress delete hin danda'amne" });
     }
 });

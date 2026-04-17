@@ -333,6 +333,70 @@
 .file-list-container.show {
     display: block;
 }
+
+.account-panel {
+    background: hsl(207, 15%, 88%);
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.account-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+}
+
+.account-card {
+    background: rgba(255,255,255,0.7);
+    border-radius: 14px;
+    padding: 18px;
+}
+
+.account-card h3 {
+    color: #1b5e20;
+    margin-bottom: 12px;
+}
+
+.account-input {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    outline: none;
+}
+
+.account-input:focus {
+    border-color: #1b5e20;
+}
+
+.profile-preview {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #1b5e20;
+    display: block;
+    margin-bottom: 12px;
+}
+
+.account-btn {
+    width: 100%;
+    padding: 11px 12px;
+    border: none;
+    border-radius: 8px;
+    background: #1b5e20;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.account-msg {
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: #475569;
+}
  
 
     </style>
@@ -358,7 +422,7 @@
 </div>
 <div class="user-profile-wrapper">
     <div class="profile-main">
-        <img src="profile.png" alt="dawe" class="profile-circle">
+        <img src="profile.png" alt="Profile" class="profile-circle" id="headerProfilePic">
         <span class="profile-name">dawe</span>
     </div>
 
@@ -375,6 +439,7 @@
             <li><a href="#library" onclick="toggleSidebar()"><i class="fas fa-book"></i> <span>Digital Library</span></a></li>
             <li><a href="#stats" onclick="toggleSidebar()"><i class="fas fa-chart-bar"></i> <span>Statistics</span></a></li>
             <li><a href="#roadmap" onclick="toggleSidebar()"><i class="fas fa-map-marked-alt"></i> <span>Qirath Roadmap</span></a></li>
+            <li><a href="#account" onclick="toggleSidebar()"><i class="fas fa-user-cog"></i> <span>My Account</span></a></li>
             <li><a href="#contact" onclick="toggleSidebar()"><i class="fas fa-envelope"></i> <span>Contact</span></a></li>
         </ul>
     </nav>
@@ -442,10 +507,11 @@
         <section id="stats" class="section">
             <div class="section-header"><h1>Jema'aa Statistics</h1></div>
             <div class="stats-container">
-                <p>Male Students (608)</p>
-                <div class="bar-wrapper"><div class="bar" style="width: 57%;"></div></div>
-                <p>Female Students (450)</p>
-                <div class="bar-wrapper"><div class="bar" style="width: 43%; background: #66bb6a;"></div></div>
+                <p id="maleStatsLabel">Male Students (0)</p>
+                <div class="bar-wrapper"><div id="maleStatsBar" class="bar" style="width: 0%;"></div></div>
+                <p id="femaleStatsLabel">Female Students (0)</p>
+                <div class="bar-wrapper"><div id="femaleStatsBar" class="bar" style="width: 0%; background: #66bb6a;"></div></div>
+                <p id="totalStatsLabel" style="margin-top: 10px; font-weight: 700; color: #1b5e20;">Total Registered Students: 0</p>
             </div>
         </section>
         
@@ -475,6 +541,29 @@
             Send to Admin 
         </button>
         <p id="statusMsg" style="margin-top: 10px; font-size: 0.85rem; color: #666;"></p>
+    </div>
+</section>
+
+<section id="account" class="section">
+    <div class="section-header"><h1>My Account</h1></div>
+    <div class="account-panel">
+        <div class="account-grid">
+            <div class="account-card">
+                <h3>Upload Profile Photo</h3>
+                <img src="profile.png" alt="Profile Preview" class="profile-preview" id="profilePreview">
+                <input type="file" id="profileUploadInput" accept="image/*" class="account-input">
+                <button class="account-btn" onclick="uploadProfilePhoto()" id="profileUploadBtn">Upload Photo</button>
+                <p id="profileMsg" class="account-msg"></p>
+            </div>
+            <div class="account-card">
+                <h3>Change Password</h3>
+                <input type="password" id="currentPassword" class="account-input" placeholder="Current password">
+                <input type="password" id="newPassword" class="account-input" placeholder="New password">
+                <input type="password" id="confirmPassword" class="account-input" placeholder="Confirm new password">
+                <button class="account-btn" onclick="changeMyPassword()" id="changePasswordBtn">Change Password</button>
+                <p id="passwordMsg" class="account-msg"></p>
+            </div>
+        </div>
     </div>
 </section>
     </main>
@@ -523,156 +612,404 @@
             <p>© 2026 AUWCMSJ | Developed by AUWCMSJ DEVELOPERS | All Rights Reserved.</p>
         </div>
     </footer>
+<script>
 
-    <script>
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('active');
+async function fetchWithApiFallback(path, options) {
+    const host = window.location.hostname;
+    const candidates = [
+        'http://127.0.0.1:5000',
+        'http://localhost:5000',
+        host && host !== 'localhost' && host !== '127.0.0.1' ? `http://${host}:5000` : null
+    ].filter(Boolean);
+
+    let lastError = null;
+    for (const base of candidates) {
+        try {
+            return await fetch(`${base}${path}`, options);
+        } catch (err) {
+            lastError = err;
         }
+    }
 
-        document.querySelector('.main-content').addEventListener('click', () => {
+    throw lastError || new Error('Server connection failed.');
+}
+
+function getAuthHeaders(extraHeaders = {}) {
+    const token = sessionStorage.getItem('token') || '';
+    return {
+        ...extraHeaders,
+        Authorization: `Bearer ${token}`
+    };
+}
+
+async function readApiResponse(res, fallbackMessage) {
+    const raw = await res.text();
+
+    try {
+        return raw ? JSON.parse(raw) : {};
+    } catch {
+        if (raw && raw.trim().startsWith('<!DOCTYPE')) {
+            throw new Error('Server returned HTML instead of JSON. Restart the Node server and log in again.');
+        }
+        throw new Error(raw || fallbackMessage);
+    }
+}
+
+// ===== 1. PAGE LOAD =====
+window.addEventListener("DOMContentLoaded", () => {
+    const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
+    const role = sessionStorage.getItem('role');
+
+    if (!isLoggedIn || role !== 'student') {
+        window.location.href = "login.html";
+        return;
+    }
+
+    setUser();
+    loadNews();
+    loadResources();
+    loadStats();
+    fetchPrayerTimes();
+    setupLibraryCards();
+    loadMyProfile();
+
+    // Sidebar close when click main
+    const main = document.querySelector('.main-content');
+    if (main) {
+        main.addEventListener('click', () => {
             document.getElementById('sidebar').classList.remove('active');
         });
-</script>
-
-<script>
-        window.onload = function() {
-    // 1. PROFILE & NEWS 
-    const currentUser = localStorage.getItem('currentUser') || "dawe";
-    if (document.querySelector('.profile-name')) {
-        document.querySelector('.profile-name').innerText = currentUser;
     }
 
-    const news = localStorage.getItem('adminNews');
-    const newsDisplay = document.getElementById('newsDisplay');
-    if (news && newsDisplay) {
-        newsDisplay.innerText = news;
+    // Logout
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
     }
+});
 
-    // 2. LIBRARY LOGIC (Accordion Style)
-    const resources = JSON.parse(localStorage.getItem('resources')) || [];
-    const lists = {
-        'Academic': document.getElementById('list-academic'),
-        'Religious': document.getElementById('list-religious'),
-        'General': document.getElementById('list-general')
-    };
 
-    // Ragaa durii qulqulleessuu
-    Object.values(lists).forEach(list => { if (list) list.innerHTML = ""; });
+// ===== 2. USER =====
+function setUser() {
+    const currentUser =
+        sessionStorage.getItem('userName') ||
+        localStorage.getItem('currentUser') ||
+        "User";
 
-    if (resources.length > 0) {
-        resources.forEach(res => {
-            const listTarget = lists[res.category];
-            if (listTarget) {
-                listTarget.innerHTML += `
-                    <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px; margin-top: 8px; border-radius: 8px; border: 1px solid #eee;">
-                        <span style="font-size: 13px; color: #333; font-weight: 600;">${res.title}</span>
-                        <a href="${res.data}" download="${res.title}" style="color: #1b5e20;">
-                            <i class="fas fa-download"></i>
-                        </a>
+    localStorage.setItem('currentUser', currentUser);
+    const el = document.querySelector('.profile-name');
+    if (el) el.innerText = currentUser;
+
+    const savedProfilePic = localStorage.getItem('currentProfilePic') || 'profile.png';
+    const headerProfilePic = document.getElementById('headerProfilePic');
+    const profilePreview = document.getElementById('profilePreview');
+
+    if (headerProfilePic) headerProfilePic.src = savedProfilePic;
+    if (profilePreview) profilePreview.src = savedProfilePic;
+}
+
+
+// ===== 3. NEWS =====
+async function loadNews() {
+    try {
+        const res = await fetchWithApiFallback('/api/news');
+        if (!res.ok) throw new Error("News API error");
+
+        const data = await res.json();
+        document.getElementById('newsDisplay').innerText =
+            data.news || "Beeksisni hin jiru.";
+
+    } catch (err) {
+        console.log(err);
+        document.getElementById('newsDisplay').innerText = "News hin fe'amne!";
+    }
+}
+
+
+// ===== 4. RESOURCES =====
+async function loadResources() {
+    try {
+        const res = await fetchWithApiFallback('/api/resources');
+        if (!res.ok) throw new Error("Resource API error");
+
+        const resources = await res.json();
+
+        const lists = {
+            Academic: document.getElementById('list-academic'),
+            Religious: document.getElementById('list-religious'),
+            General: document.getElementById('list-general')
+        };
+
+        Object.values(lists).forEach(l => {
+            if (l) l.innerHTML = "";
+        });
+
+        if (resources.length === 0) {
+            Object.values(lists).forEach(list => {
+                if (list) list.innerHTML = '<p style="font-size: 12px; color: #888;">No resources yet.</p>';
+            });
+            return;
+        }
+
+        resources.forEach(r => {
+            const target = lists[r.category];
+            if (target) {
+                target.innerHTML += `
+                    <div style="margin:5px 0;">
+                        ${r.title}
+                        <a href="${r.fileUrl || '#'}" target="_blank">Download</a>
                     </div>`;
             }
         });
-    } else {
-         // Yoo kitaabni hin jirre
-         Object.values(lists).forEach(list => { 
-            if(list) list.innerHTML = '<p style="font-size: 12px; color: #888;">Kitaabni hin jiru.</p>'; 
-         });
+
+    } catch (err) {
+        console.log(err);
     }
+}
 
-    // 3. CLICK TO SHOW/HIDE (ACCORDION)
-    const cards = document.querySelectorAll('.card');
-    cards.forEach(card => {
-        card.addEventListener('click', function(e) {
-            // Yoo download button tuqan akka hin cufamneef
-            if (e.target.closest('a')) return;
-
-            const listContainer = this.querySelector('.file-list-container');
-            if (listContainer) {
-                listContainer.classList.toggle('show');
-            }
+function setupLibraryCards() {
+    document.querySelectorAll('#library .card').forEach(card => {
+        card.addEventListener('click', () => {
+            const fileList = card.querySelector('.file-list-container');
+            if (fileList) fileList.classList.toggle('show');
         });
     });
+}
 
-    // 4. PRAYER TIMES FIDUU
-    fetchPrayerTimes();
-};
+async function loadMyProfile() {
+    try {
+        const res = await fetchWithApiFallback('/api/user/me', {
+            headers: getAuthHeaders()
+        });
+        const user = await readApiResponse(res, 'Profile load failed.');
+        if (!res.ok) throw new Error(user.message || 'Profile load failed.');
+        const profilePic = user.profilePic || localStorage.getItem('currentProfilePic') || 'profile.png';
 
-// --- KUNNIIN JALATTI HAFACHUU QABU ---
+        sessionStorage.setItem('userName', user.name || sessionStorage.getItem('userName') || 'User');
+        sessionStorage.setItem('studentId', user.studentId || sessionStorage.getItem('studentId') || '');
+        localStorage.setItem('currentUser', user.name || 'User');
+        localStorage.setItem('currentProfilePic', profilePic);
+        setUser();
+    } catch (err) {
+        console.log(err);
+    }
+}
 
+async function uploadProfilePhoto() {
+    const input = document.getElementById('profileUploadInput');
+    const msg = document.getElementById('profileMsg');
+    const button = document.getElementById('profileUploadBtn');
+    const file = input?.files?.[0];
+
+    if (!file) {
+        msg.style.color = 'red';
+        msg.innerText = 'Please choose an image first.';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+        try {
+            button.disabled = true;
+            button.innerText = 'Uploading...';
+
+            const profilePic = String(reader.result || '');
+            const res = await fetchWithApiFallback('/api/user/profile-photo', {
+                method: 'PUT',
+                headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({ profilePic })
+            });
+            const data = await readApiResponse(res, 'Profile upload failed.');
+
+            if (!res.ok) throw new Error(data.message || 'Profile upload failed.');
+
+            localStorage.setItem('currentProfilePic', data.profilePic || profilePic);
+            setUser();
+            msg.style.color = 'green';
+            msg.innerText = data.message || 'Profile photo updated.';
+            input.value = '';
+        } catch (err) {
+            msg.style.color = 'red';
+            msg.innerText = err.message || 'Profile upload failed.';
+        } finally {
+            button.disabled = false;
+            button.innerText = 'Upload Photo';
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+async function changeMyPassword() {
+    const currentPassword = document.getElementById('currentPassword').value.trim();
+    const newPassword = document.getElementById('newPassword').value.trim();
+    const confirmPassword = document.getElementById('confirmPassword').value.trim();
+    const msg = document.getElementById('passwordMsg');
+    const button = document.getElementById('changePasswordBtn');
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        msg.style.color = 'red';
+        msg.innerText = 'Please fill all password fields.';
+        return;
+    }
+
+    if (newPassword.length < 6) {
+        msg.style.color = 'red';
+        msg.innerText = 'New password must be at least 6 characters.';
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        msg.style.color = 'red';
+        msg.innerText = 'New password and confirm password do not match.';
+        return;
+    }
+
+    try {
+        button.disabled = true;
+        button.innerText = 'Saving...';
+
+        const res = await fetchWithApiFallback('/api/user/change-password', {
+            method: 'PUT',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ currentPassword, newPassword })
+        });
+        const data = await readApiResponse(res, 'Password change failed.');
+
+        if (!res.ok) throw new Error(data.message || 'Password change failed.');
+
+        msg.style.color = 'green';
+        msg.innerText = data.message || 'Password changed successfully.';
+        document.getElementById('currentPassword').value = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmPassword').value = '';
+    } catch (err) {
+        msg.style.color = 'red';
+        msg.innerText = err.message || 'Password change failed.';
+    } finally {
+        button.disabled = false;
+        button.innerText = 'Change Password';
+    }
+}
+
+
+// ===== 5. PROGRESS =====
+async function submitToAdmin() {
+    const level = document.getElementById('levelSelect').value;
+    const detail = document.getElementById('progressDetail').value.trim();
+    const msg = document.getElementById('statusMsg');
+    const submitBtn = document.getElementById('submitBtn');
+    const student =
+        sessionStorage.getItem('userName') ||
+        localStorage.getItem('currentUser') ||
+        "Unknown";
+
+    if (!detail) {
+        msg.style.color = "red";
+        msg.innerText = "Write something!";
+        return;
+    }
+
+    try {
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Sending...";
+        const res = await fetchWithApiFallback('/api/progress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ student, level, detail })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Submit failed");
+
+        msg.style.color = "green";
+        msg.innerText = data.message || "Sent successfully!";
+        document.getElementById('progressDetail').value = "";
+
+    } catch (err) {
+        console.log(err);
+        msg.style.color = "red";
+        msg.innerText = err.message || "Server hin hojjenne!";
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Send to Admin";
+    }
+}
+
+
+// ===== 6. STATS =====
+async function loadStats() {
+    try {
+        const res = await fetchWithApiFallback('/api/statistics');
+        if (!res.ok) throw new Error("Stats error");
+
+        const data = await res.json();
+        const total = Number(data.total || 0);
+        const male = Number(data.male || 0);
+        const female = Number(data.female || 0);
+        const malePercent = total > 0 ? (male / total) * 100 : 0;
+        const femalePercent = total > 0 ? (female / total) * 100 : 0;
+
+        const maleLabel = document.getElementById('maleStatsLabel');
+        const femaleLabel = document.getElementById('femaleStatsLabel');
+        const totalLabel = document.getElementById('totalStatsLabel');
+        const maleBar = document.getElementById('maleStatsBar');
+        const femaleBar = document.getElementById('femaleStatsBar');
+
+        if (maleLabel) maleLabel.innerText = `Male Students (${male})`;
+        if (femaleLabel) femaleLabel.innerText = `Female Students (${female})`;
+        if (totalLabel) totalLabel.innerText = `Total Registered Students: ${total}`;
+        if (maleBar) maleBar.style.width = `${malePercent}%`;
+        if (femaleBar) femaleBar.style.width = `${femalePercent}%`;
+
+    } catch (err) {
+        console.log("Stats hin fe'amne");
+    }
+}
+
+
+// ===== 7. PRAYER =====
+async function fetchPrayerTimes() {
+    try {
+        const locStatus = document.getElementById('loc-status');
+        const res = await fetch(`https://api.aladhan.com/v1/timingsByCity?city=Woliso&country=Ethiopia&method=3`);
+        const json = await res.json();
+
+        const t = json.data.timings;
+        const h = json.data.date.hijri;
+
+        document.getElementById('fajr').innerText = t.Fajr;
+        document.getElementById('dhuhr').innerText = t.Dhuhr;
+        document.getElementById('asr').innerText = t.Asr;
+        document.getElementById('maghrib').innerText = t.Maghrib;
+        document.getElementById('isha').innerText = t.Isha;
+        document.getElementById('hijri-date').innerText =
+            `${h.day} ${h.month.en} ${h.year} AH`;
+        if (locStatus) locStatus.innerText = "Woliso, Ethiopia";
+
+    } catch {
+        console.log("Prayer error");
+        const locStatus = document.getElementById('loc-status');
+        if (locStatus) locStatus.innerText = "Prayer times unavailable";
+    }
+}
+
+
+// ===== 8. SIDEBAR =====
 function toggleSidebar() {
     document.getElementById('sidebar').classList.toggle('active');
 }
 
-async function fetchPrayerTimes() {
-    try {
-        const res = await fetch(`https://api.aladhan.com/v1/timingsByCity?city=Woliso&country=Ethiopia&method=3`);
-        const json = await res.json();
-        const t = json.data.timings;
-        const h = json.data.date.hijri;
-        
-        if(document.getElementById('fajr')) {
-            document.getElementById('fajr').innerText = t.Fajr;
-            document.getElementById('dhuhr').innerText = t.Dhuhr;
-            document.getElementById('asr').innerText = t.Asr;
-            document.getElementById('maghrib').innerText = t.Maghrib;
-            document.getElementById('isha').innerText = t.Isha;
-            document.getElementById('hijri-date').innerText = `${h.day} ${h.month.en} ${h.year} AH`;
-        }
-    } catch (e) {
-        console.log("Error fetching prayer times");
+
+// ===== 9. LOGOUT =====
+function logout(e) {
+    if (e) e.preventDefault();
+    if (confirm("Are you sure?")) {
+        sessionStorage.clear();
+        localStorage.removeItem('currentUser');
+        window.location.href = "login.html";
     }
 }
-// LOGOUT SYSTEM
-const logoutButton = document.getElementById('logoutBtn');
 
-if (logoutButton) {
-    logoutButton.onclick = function(e) {
-        e.preventDefault(); // Akka linkiin ofiin hin kaanne dhorkuuf
-        
-        const confirmLogout = confirm("Are you sure?");
-        if (confirmLogout) {
-            // Ragaa user-aa login godhe localStorage irraa haquu
-            localStorage.removeItem('currentUser');
-            
-            // Gara fulwara Login-tti deebisuu
-            window.location.href = "login.html"; 
-        }
-    };
-}
-function submitToAdmin() {
-    const level = document.getElementById('levelSelect').value;
-    const detail = document.getElementById('progressDetail').value;
-    const statusMsg = document.getElementById('statusMsg');
-    const currentUser = localStorage.getItem('currentUser') || "Unknown User";
-
-    if (!detail.trim()) {
-        statusMsg.style.color = "red";
-        statusMsg.innerText = "Please, describe what you have completed!";
-        return;
-    }
-
-    // Ragaa bifa Table-tiif dhiyaatu qopheessuu
-    const newEntry = {
-        student: currentUser,
-        level: level,
-        detail: detail,
-        timestamp: new Date().toLocaleString()
-    };
-
-    // localStorage irraa ragaa jiru fiduu
-    let allProgress = JSON.parse(localStorage.getItem('studentProgress')) || [];
-    
-    // Ragaa haaraa itti dabaluu
-    allProgress.push(newEntry);
-    
-    // Deebisanii save gochuu
-    localStorage.setItem('studentProgress', JSON.stringify(allProgress));
-
-    // Milkaa'ina beeksisuu
-    statusMsg.style.color = "green";
-    statusMsg.innerText = "Sent successfully!";
-    document.getElementById('progressDetail').value = "";
-}
 </script>
 </body>
 </html>
