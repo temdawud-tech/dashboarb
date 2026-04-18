@@ -8,10 +8,10 @@
     <style>
         /* --- 1. MODERN DESIGN --- */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-        body { display: flex; background: #f0f2f5; min-height: 100vh; }
+        body { display: flex; background: #f0f2f5; min-height: 100vh; overflow-x: hidden; }
         
         /* Sidebar */
-        .sidebar { width: 260px; background: #064e3b; color: white; padding: 25px; position: fixed; height: 100%; transition: 0.3s; }
+        .sidebar { width: 260px; background: #064e3b; color: white; padding: 25px; position: fixed; height: 100%; transition: 0.3s; z-index: 1200; }
         .sidebar h2 { font-size: 20px; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
         .nav-item { padding: 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; border-radius: 8px; transition: 0.3s; margin-bottom: 5px; }
         .nav-item:hover { background: rgba(255,255,255,0.1); }
@@ -53,6 +53,10 @@
         table { width: 100%; border-collapse: collapse; }
         th { background: #f8fafc; padding: 15px; text-align: left; color: #64748b; border-bottom: 2px solid #edf2f7; }
         td { padding: 15px; border-bottom: 1px solid #eee; font-size: 14px; }
+        #progress-admin { overflow-x: auto; }
+        #progress-admin table,
+        #manageResourcesCard table,
+        #userTable { min-width: 720px; }
 
         .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
         .badge-active { background: #dcfce7; color: #166534; }
@@ -87,6 +91,73 @@
 
 /* Computer irratti akka hin mul'anneef */
 .hamburger-btn { display: none; }
+
+        @media (max-width: 992px) {
+            .main { padding: 24px 18px; }
+            #addUserSection > div,
+            #uploadSection > div,
+            .card div[style*="grid-template-columns: 1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body { display: block; }
+            .main {
+                margin-left: 0;
+                width: 100%;
+                padding: 74px 14px 20px;
+            }
+            .card {
+                padding: 18px 14px;
+                border-radius: 12px;
+            }
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .search-wrapper {
+                width: 100%;
+                margin-right: 0;
+            }
+            .controls .btn,
+            .button-group .btn,
+            #addUserSection .btn,
+            #uploadSection .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            .stat-card p {
+                font-size: 20px;
+            }
+            th, td {
+                padding: 12px 10px;
+                font-size: 13px;
+                white-space: nowrap;
+            }
+            #progress-admin h2 {
+                font-size: 20px;
+                margin-bottom: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main { padding: 70px 10px 16px; }
+            .card { padding: 16px 12px; }
+            .sidebar h2 { font-size: 18px; }
+            .nav-item { padding: 10px; font-size: 14px; }
+            .hamburger-btn {
+                top: 10px;
+                left: 10px;
+                padding: 9px 12px;
+            }
+            .search-bar,
+            textarea,
+            select,
+            input {
+                font-size: 16px;
+            }
+        }
     </style>
 </head>
 <body>

@@ -397,6 +397,259 @@
     font-size: 0.85rem;
     color: #475569;
 }
+
+.library-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.library-notice {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #fff3cd;
+    color: #8a6d3b;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.library-notice.show {
+    display: inline-flex;
+}
+
+.library-card-badge {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    display: none;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: #d32f2f;
+    color: white;
+    font-size: 0.78rem;
+    font-weight: 700;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 18px rgba(211, 47, 47, 0.25);
+}
+
+        .library-card-badge.show {
+    display: inline-flex;
+}
+
+@media (max-width: 992px) {
+    .top-nav {
+        height: 220px;
+        padding: 20px 16px;
+    }
+
+    .header-top-row {
+        padding: 0 16px;
+    }
+
+    .ayah-content {
+        width: 100%;
+        max-width: 620px;
+        margin: 32px auto 0;
+        padding: 16px;
+    }
+
+    .user-profile-wrapper {
+        top: 18px;
+        right: 16px;
+    }
+
+    .main-content {
+        padding: 260px 20px 24px;
+    }
+
+    .main-footer {
+        padding: 40px 20px 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .top-nav {
+        height: 255px;
+    }
+
+    .header-top-row {
+        top: 12px;
+        padding: 0 12px;
+    }
+
+    .header-logo h3 {
+        font-size: 1rem;
+    }
+
+    .logopic {
+        width: 42px;
+        height: 42px;
+    }
+
+    .menu-icon {
+        font-size: 20px;
+    }
+
+    .ayah-content {
+        margin-top: 56px;
+        padding: 14px 12px;
+        border-radius: 12px;
+    }
+
+    .ayah-content h2 {
+        font-size: 1.25rem;
+        line-height: 1.4;
+    }
+
+    .logo-ayah {
+        font-size: 0.82rem;
+        line-height: 1.5;
+    }
+
+    .user-profile-wrapper {
+        position: static;
+        margin-top: 12px;
+    }
+
+    .profile-main {
+        padding: 5px 10px;
+    }
+
+    .main-content {
+        padding: 285px 14px 20px;
+    }
+
+    .section {
+        margin-bottom: 40px;
+    }
+
+    .section-header {
+        margin-bottom: 18px;
+    }
+
+    .section-header h1 {
+        font-size: 1.35rem;
+    }
+
+    .grid-cards,
+    .account-grid,
+    .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .card,
+    .prayer-container,
+    .stats-container,
+    .account-panel {
+        padding: 18px 14px;
+        border-radius: 16px;
+    }
+
+    .card {
+        padding-top: 24px;
+    }
+
+    .card i {
+        width: 58px;
+        height: 58px;
+        line-height: 58px;
+        font-size: 1.8rem;
+        margin-bottom: 14px;
+    }
+
+    .prayer-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .library-header {
+        align-items: flex-start;
+    }
+
+    .library-notice {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .profile-name {
+        max-width: 110px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .footer-col h4 {
+        margin-bottom: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .top-nav {
+        height: 280px;
+    }
+
+    .sidebar {
+        width: 82vw;
+        left: -82vw;
+        padding: 170px 16px 20px;
+    }
+
+    .main-content {
+        padding: 308px 10px 18px;
+    }
+
+    .section-header {
+        padding-left: 12px;
+        border-left-width: 4px;
+    }
+
+    .section-header h1 {
+        font-size: 1.2rem;
+    }
+
+    #newsDisplay {
+        font-size: 0.92rem;
+        padding: 12px;
+    }
+
+    .prayer-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .prayer-box p {
+        font-size: 1rem;
+    }
+
+    .logout-small-btn,
+    .account-btn,
+    #submitBtn,
+    #levelSelect,
+    #progressDetail,
+    .account-input {
+        font-size: 16px;
+    }
+
+    .library-card-badge {
+        top: 12px;
+        right: 12px;
+    }
+
+    .main-footer {
+        padding: 32px 14px 18px;
+    }
+
+    .footer-bottom {
+        margin-top: 24px;
+        padding-top: 20px;
+    }
+}
  
 
     </style>
@@ -475,10 +728,19 @@
         </section>
 
        <section id="library" class="section">
-    <div class="section-header"><h1>Digital Library</h1></div>
+    <div class="section-header">
+        <div class="library-header">
+            <h1>Digital Library</h1>
+            <div id="libraryNotice" class="library-notice">
+                <i class="fas fa-bell"></i>
+                <span>New material available</span>
+            </div>
+        </div>
+    </div>
     
     <div class="grid-cards">
-        <div class="card">
+        <div class="card" data-category="Academic">
+            <div class="library-card-badge" data-badge="Academic">New</div>
             <i class="fas fa-university"></i>
             <h3>Academic</h3>
             <div id="list-academic" class="file-list-container">
@@ -486,7 +748,8 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="card" data-category="Religious">
+            <div class="library-card-badge" data-badge="Religious">New</div>
             <i class="fas fa-mosque"></i>
             <h3>Religious</h3>
             <div id="list-religious" class="file-list-container">
@@ -494,7 +757,8 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="card" data-category="General">
+            <div class="library-card-badge" data-badge="General">New</div>
             <i class="fas fa-book-open"></i>
             <h3>General</h3>
             <div id="list-general" class="file-list-container">
@@ -517,12 +781,6 @@
         
 <section id="roadmap" class="section">
     <div class="section-header"><h1>Qirath Progress Update</h1></div>
-    
-    <div class="roadmap-track">
-        <div class="step"><div id="disp-step-1" class="circle">1</div><p>Basic</p></div>
-        <div class="step"><div id="disp-step-2" class="circle" style="background:#1b5e20;">2</div><p>Intermediate</p></div>
-        <div class="step"><div id="disp-step-3" class="circle" style="background: #1b5e20;">3</div><p>Advanced</p></div>
-    </div>
 
     <div class="update-box" style="  background: hsl(207, 15%, 88%);  padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-top: 30px;">
         <h3 style="color: #1b5e20; margin-bottom: 15px;">Submit Your Progress</h3>
@@ -733,6 +991,23 @@ async function loadResources() {
         if (!res.ok) throw new Error("Resource API error");
 
         const resources = await res.json();
+        const previousSignature = localStorage.getItem('libraryResourceSignature') || '';
+        const previousResources = previousSignature ? JSON.parse(previousSignature) : [];
+        const currentSignature = JSON.stringify(
+            resources.map(({ title, category, fileUrl }) => ({ title, category, fileUrl }))
+        );
+        const hasNewMaterials = previousSignature && previousSignature !== currentSignature;
+        const newCategories = hasNewMaterials
+            ? [...new Set(
+                resources
+                    .filter(resource => !previousResources.some(prev =>
+                        prev.title === resource.title &&
+                        prev.category === resource.category &&
+                        prev.fileUrl === resource.fileUrl
+                    ))
+                    .map(resource => resource.category)
+            )]
+            : [];
 
         const lists = {
             Academic: document.getElementById('list-academic'),
@@ -762,9 +1037,24 @@ async function loadResources() {
             }
         });
 
+        updateLibraryNotifications(hasNewMaterials, newCategories);
+        localStorage.setItem('libraryResourceSignature', currentSignature);
+
     } catch (err) {
         console.log(err);
     }
+}
+
+function updateLibraryNotifications(hasNewMaterials, categories = []) {
+    const notice = document.getElementById('libraryNotice');
+    if (notice) {
+        notice.classList.toggle('show', hasNewMaterials);
+    }
+
+    document.querySelectorAll('.library-card-badge').forEach(badge => {
+        const category = badge.dataset.badge;
+        badge.classList.toggle('show', hasNewMaterials && categories.includes(category));
+    });
 }
 
 function setupLibraryCards() {
@@ -772,6 +1062,15 @@ function setupLibraryCards() {
         card.addEventListener('click', () => {
             const fileList = card.querySelector('.file-list-container');
             if (fileList) fileList.classList.toggle('show');
+
+            const badge = card.querySelector('.library-card-badge');
+            if (badge) badge.classList.remove('show');
+
+            const visibleBadges = document.querySelectorAll('.library-card-badge.show').length;
+            const notice = document.getElementById('libraryNotice');
+            if (notice && visibleBadges === 0) {
+                notice.classList.remove('show');
+            }
         });
     });
 }

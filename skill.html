@@ -47,6 +47,29 @@
         .btn-next { background: #065f46; color: white; }
 
         .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        @media (max-width: 480px) {
+            body {
+                align-items: flex-start;
+                padding: 14px;
+            }
+            .form-card {
+                padding: 24px 16px;
+                margin-top: 18px;
+            }
+            .step-tabs h2 {
+                font-size: 20px;
+            }
+            .text-area {
+                font-size: 16px;
+            }
+            .button-group {
+                flex-direction: column-reverse;
+            }
+            .btn {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>

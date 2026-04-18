@@ -117,6 +117,34 @@
             50% { transform: scale(1.1); }
             100% { transform: scale(1); }
         }
+
+        @media (max-width: 480px) {
+            body {
+                align-items: flex-start;
+                padding: 14px;
+            }
+            .success-card {
+                margin-top: 18px;
+                padding: 24px 16px;
+                border-radius: 14px;
+            }
+            .status-steps {
+                font-size: 24px;
+                justify-content: center;
+            }
+            .thanks-msg {
+                font-size: 14px;
+            }
+            .info-text {
+                font-size: 12px;
+                padding: 12px;
+            }
+            .footer-links {
+                flex-wrap: wrap;
+                gap: 10px;
+                font-size: 11px;
+            }
+        }
     </style>
 </head>
 <body>
