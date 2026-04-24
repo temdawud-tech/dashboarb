@@ -665,6 +665,11 @@
                 </div>
                 <div class="menu-icon" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
             </div>
+            <div id="adminReturnBtn" style="display: none;">
+                <button onclick="returnToAdminView()" style="background: #1b5e20; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                    <i class="fas fa-arrow-left"></i> Return to Admin View
+                </button>
+            </div>
 
         </div>
         
@@ -820,6 +825,12 @@
                 <input type="password" id="confirmPassword" class="account-input" placeholder="Confirm new password">
                 <button class="account-btn" onclick="changeMyPassword()" id="changePasswordBtn">Change Password</button>
                 <p id="passwordMsg" class="account-msg"></p>
+            </div>
+            <div class="account-card" style="border: 2px solid #f59e0b; background: #fef3c7;">
+                <h3 style="color: #d97706;">Delete Profile Photo</h3>
+                <p style="color: #92400e; margin-bottom: 15px; font-size: 0.9rem;">Remove your current profile photo and revert to default.</p>
+                <button class="account-btn" onclick="deleteProfilePhoto()" id="deletePhotoBtn" style="background: #f59e0b; color: white;">Delete Profile Photo</button>
+                <p id="deletePhotoMsg" class="account-msg"></p>
             </div>
         </div>
     </div>
@@ -1299,7 +1310,72 @@ function toggleSidebar() {
 }
 
 
-// ===== 9. LOGOUT =====
+// ===== 9. DELETE PROFILE PHOTO =====
+async function deleteProfilePhoto() {
+    const msg = document.getElementById('deletePhotoMsg');
+    const button = document.getElementById('deletePhotoBtn');
+
+    if (!confirm("Are you sure you want to delete your profile photo? This will revert to the default photo.")) {
+        return;
+    }
+
+    try {
+        button.disabled = true;
+        button.innerText = 'Deleting...';
+        msg.style.color = '#92400e';
+        msg.innerText = 'Deleting profile photo...';
+
+        // Get current user info
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        const studentId = currentUser.studentId || sessionStorage.getItem('userName');
+
+        // Call delete profile photo endpoint
+        const res = await fetchWithApiFallback('/api/user/delete-profile-photo', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ studentId })
+        });
+
+        // Handle response properly
+        const responseText = await res.text();
+        console.log('Delete photo response:', responseText);
+        
+        let data;
+        try {
+            data = responseText ? JSON.parse(responseText) : {};
+        } catch (parseError) {
+            console.error('JSON parse error:', parseError, 'Response text:', responseText);
+            // If JSON parsing fails, treat the response as a plain message
+            data = { message: responseText || 'Profile photo deletion completed' };
+        }
+
+        if (!res.ok) {
+            throw new Error(data.message || 'Failed to delete profile photo');
+        }
+
+        // Update local storage and UI
+        localStorage.removeItem('currentProfilePic');
+        
+        // Update profile preview to default
+        document.getElementById('profilePreview').src = 'profile.png';
+        
+        msg.style.color = 'green';
+        msg.innerText = 'Profile photo deleted successfully!';
+        
+        // Update user display
+        setUser();
+
+    } catch (err) {
+        console.error('Profile photo deletion error:', err);
+        msg.style.color = 'red';
+        msg.innerText = err.message || 'Failed to delete profile photo. Please try again.';
+    } finally {
+        button.disabled = false;
+        button.innerText = 'Delete Profile Photo';
+    }
+}
+
+// ===== 10. LOGOUT =====
 function logout(e) {
     if (e) e.preventDefault();
     if (confirm("Are you sure?")) {
@@ -1308,6 +1384,21 @@ function logout(e) {
         window.location.href = "login.html";
     }
 }
+
+// --- ADMIN VIEW FUNCTIONS ---
+function returnToAdminView() {
+    const returnUrl = sessionStorage.getItem('adminReturnUrl') || 'admin.html';
+    sessionStorage.removeItem('isAdminView');
+    sessionStorage.removeItem('adminReturnUrl');
+    window.location.href = returnUrl;
+}
+
+// Check if user is admin and show return button
+document.addEventListener('DOMContentLoaded', function() {
+    if (sessionStorage.getItem('isAdminView') === 'true') {
+        document.getElementById('adminReturnBtn').style.display = 'block';
+    }
+});
 
 </script>
 </body>

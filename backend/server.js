@@ -423,6 +423,31 @@ async function approveStudentHandler(req, res) {
 
 app.put('/api/admin/approve', approveStudentHandler);
 app.post('/api/admin/approve', approveStudentHandler);
+
+// Block member endpoint
+app.post('/api/admin/block', async (req, res) => {
+    try {
+        const studentId = String(req.body.studentId || '').trim();
+
+        if (!studentId) {
+            return res.status(400).json({ message: "Student ID is required." });
+        }
+
+        const updatedUser = await User.findOneAndUpdate(
+            { studentId: studentId }, 
+            { status: 'blocked' }, 
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "Barataan hin argamne" });
+        }
+
+        res.json({ message: "Member blocked successfully!", user: updatedUser });
+    } catch (err) {
+        res.status(500).json({ message: "Error: " + err.message });
+    }
+});
 app.post('/api/admin/add-student', async (req, res) => {
     try {
         const studentId = String(req.body.studentId || '').trim();
@@ -548,11 +573,16 @@ app.delete('/api/progress/:index', (req, res) => {
         }
 
         const data = fs.readFileSync(progressFile, 'utf8');
-        const parsed = JSON.parse(data);
-        const rows = Array.isArray(parsed) ? parsed : [];
+        let rows = [];
 
-        if (index >= rows.length) {
-            return res.status(404).json({ message: "Progress message not found." });
+        try {
+            rows = JSON.parse(data);
+        } catch {
+            rows = [];
+        }
+
+        if (!Array.isArray(rows) || index >= rows.length) {
+            return res.status(404).json({ message: "Progress entry not found." });
         }
 
         rows.splice(index, 1);
@@ -561,5 +591,115 @@ app.delete('/api/progress/:index', (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Progress delete hin danda'amne" });
+    }
+});
+
+// Delete user profile photo endpoint
+app.delete('/api/user/delete-profile-photo', async (req, res) => {
+    try {
+        console.log('Delete profile photo request received:', req.body);
+        const { studentId } = req.body;
+
+        if (!studentId) {
+            console.log('Student ID missing');
+            return res.status(400).json({ message: "Student ID is required." });
+        }
+
+        console.log('Looking for user with studentId:', studentId.trim());
+        // Find the user
+        const user = await User.findOne({ studentId: studentId.trim() });
+        
+        if (!user) {
+            console.log('User not found');
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        console.log('User found, deleting profile photo...');
+        // Remove profile photo from user record
+        await User.updateOne(
+            { studentId: studentId.trim() },
+            { $unset: { profilePic: 1 } }
+        );
+
+        console.log('Profile photo deleted, sending response');
+        const response = { message: "Profile photo deleted successfully." };
+        console.log('Sending JSON response:', response);
+        res.json(response);
+    } catch (err) {
+        console.error("Profile photo deletion error:", err);
+        res.status(500).json({ message: "Error deleting profile photo: " + err.message });
+    }
+});
+
+// Change user role endpoint
+app.put('/api/admin/change-role', async (req, res) => {
+    try {
+        const { studentId, newRole } = req.body;
+
+        if (!studentId || !newRole) {
+            return res.status(400).json({ message: "Student ID and new role are required." });
+        }
+
+        // Validate role
+        const validRoles = ['student', 'admin', 'teacher'];
+        if (!validRoles.includes(newRole)) {
+            return res.status(400).json({ message: "Invalid role. Must be student, admin, or teacher." });
+        }
+
+        // Find the user
+        const user = await User.findOne({ studentId: studentId.trim() });
+        
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        // Update user role
+        await User.updateOne(
+            { studentId: studentId.trim() },
+            { role: newRole }
+        );
+
+        console.log(`Role changed for ${studentId} to ${newRole}`);
+        res.json({ message: `Role changed to ${newRole} successfully.` });
+    } catch (err) {
+        console.error("Role change error:", err);
+        res.status(500).json({ message: "Error changing role: " + err.message });
+    }
+});
+
+// Update user information endpoint
+app.put('/api/admin/update-user', async (req, res) => {
+    try {
+        const { studentId, name, email, status, role } = req.body;
+
+        if (!studentId) {
+            return res.status(400).json({ message: "Student ID is required." });
+        }
+
+        // Find the user
+        const user = await User.findOne({ studentId: studentId.trim() });
+        
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        // Prepare update data
+        const updateData = {};
+        if (name) updateData.name = name.trim();
+        if (email) updateData.email = email.trim();
+        if (status) updateData.status = status;
+        if (role) updateData.role = role;
+
+        // Update user information
+        await User.updateOne(
+            { studentId: studentId.trim() },
+            updateData
+        );
+
+        console.log(`User information updated for ${studentId}:`, updateData);
+        res.json({ message: "User information updated successfully." });
+    } catch (err) {
+        console.error("Update user error:", err);
+        res.status(500).json({ message: "Error updating user information: " + err.message });
     }
 });
