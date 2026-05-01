@@ -315,7 +315,58 @@
 
 .logout-small-btn:hover {
     background: #cc0000;
-}/* Jalqaba irratti listii dhoksuuf */
+}
+
+.translator-widget {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 11px;
+    color: #1b5e20;
+    width: 170px;
+}
+
+.translator-widget .translator-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.translator-widget .translator-select {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-size: 12px;
+    color: #1f2937;
+    background: #fff;
+}
+
+.translator-widget #google_translate_element {
+    position: absolute;
+    left: -9999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+.translator-widget .goog-te-gadget {
+    font-family: inherit !important;
+    font-size: 11px !important;
+    color: #1b5e20 !important;
+}
+
+.translator-widget .goog-te-gadget-simple {
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 4px !important;
+    padding: 4px 6px !important;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Jalqaba irratti listii dhoksuuf */
 .file-list-container {
     display: none; 
     margin-top: 15px;
@@ -441,6 +492,81 @@
 
         .library-card-badge.show {
     display: inline-flex;
+}
+
+.message-center-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 18px;
+}
+
+.message-center-card {
+    background: #dbe1e7;
+    border-radius: 18px;
+    padding: 20px;
+    border: 1px solid #b8c1cc;
+}
+
+.message-center-card h3 {
+    margin-bottom: 8px;
+}
+
+.message-center-card p {
+    color: #4b5563;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.msg-input {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-top: 10px;
+    outline: none;
+}
+
+.msg-input:focus {
+    border-color: #1b5e20;
+}
+
+.msg-btn {
+    width: 100%;
+    border: none;
+    border-radius: 10px;
+    background: #166534;
+    color: #fff;
+    font-weight: 700;
+    padding: 10px 12px;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+.msg-btn:hover {
+    opacity: 0.95;
+}
+
+.msg-status {
+    min-height: 1.1rem;
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: #4b5563;
+}
+
+.mini-list {
+    margin-top: 12px;
+    max-height: 230px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.mini-item {
+    background: #fff;
+    border-left: 4px solid #1b5e20;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 8px;
+    font-size: 0.86rem;
 }
 
 @media (max-width: 992px) {
@@ -687,6 +813,16 @@
     <button id="logoutBtn" class="logout-small-btn">
         <i class="fas fa-sign-out-alt"></i> Logout
     </button>
+    <div class="translator-widget">
+        <label for="languageDropdown" class="translator-label">Language</label>
+        <select id="languageDropdown" class="translator-select">
+            <option value="en">English</option>
+            <option value="am">Amharic</option>
+            <option value="ar">Arabic</option>
+            <option value="om">Oromo</option>
+        </select>
+        <div id="google_translate_element"></div>
+    </div>
 </div>
     </header>
 
@@ -697,6 +833,7 @@
             <li><a href="#library" onclick="toggleSidebar()"><i class="fas fa-book"></i> <span>Digital Library</span></a></li>
             <li><a href="#stats" onclick="toggleSidebar()"><i class="fas fa-chart-bar"></i> <span>Statistics</span></a></li>
             <li><a href="#roadmap" onclick="toggleSidebar()"><i class="fas fa-map-marked-alt"></i> <span>Qirath Roadmap</span></a></li>
+            <li><a href="#messages" onclick="toggleSidebar()"><i class="fas fa-envelope"></i> <span>Messages</span></a></li>
             <li><a href="#account" onclick="toggleSidebar()"><i class="fas fa-user-cog"></i> <span>My Account</span></a></li>
             <li><a href="#contact" onclick="toggleSidebar()"><i class="fas fa-envelope"></i> <span>Contact</span></a></li>
         </ul>
@@ -804,6 +941,39 @@
             Send to Admin 
         </button>
         <p id="statusMsg" style="margin-top: 10px; font-size: 0.85rem; color: #666;"></p>
+    </div>
+</section>
+
+<section id="messages" class="section">
+    <div class="section-header"><h1>Message Center</h1></div>
+    <div class="message-center-grid">
+        <div class="message-center-card">
+            <i class="fas fa-comment-dots"></i>
+            <h3>Send Comment To Admin</h3>
+            <p>Write any question, suggestion, or concern for the admin team.</p>
+            <textarea id="adminCommentInput" class="msg-input" rows="4" placeholder="Write your comment to admin..."></textarea>
+            <button id="sendCommentBtn" class="msg-btn" onclick="sendCommentToAdmin()">Send Comment</button>
+            <p id="commentStatus" class="msg-status"></p>
+        </div>
+
+        <div class="message-center-card">
+            <i class="fas fa-bell"></i>
+            <h3>Notifications</h3>
+            <p>You will see message confirmations and admin replies here.</p>
+            <button class="msg-btn" style="width:auto; padding: 10px 14px;" onclick="markNotificationsRead()">Mark Notifications Read</button>
+            <div id="notificationList" class="mini-list">
+                <p style="color:#6b7280;">No notifications yet.</p>
+            </div>
+        </div>
+
+        <div class="message-center-card">
+            <i class="fas fa-inbox"></i>
+            <h3>Your Conversation With Admin</h3>
+            <p>Track sent messages and see admin replies.</p>
+            <div id="conversationList" class="mini-list">
+                <p style="color:#6b7280;">No conversation yet.</p>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -941,6 +1111,7 @@ window.addEventListener("DOMContentLoaded", () => {
     fetchPrayerTimes();
     setupLibraryCards();
     loadMyProfile();
+    loadMessages();
 
     // Sidebar close when click main
     const main = document.querySelector('.main-content');
@@ -1310,7 +1481,238 @@ function toggleSidebar() {
 }
 
 
-// ===== 9. DELETE PROFILE PHOTO =====
+// ===== 9. MESSAGES =====
+async function loadMessages() {
+    try {
+        const res = await fetchWithApiFallback('/api/user/messages', {
+            headers: getAuthHeaders()
+        });
+        const data = await readApiResponse(res, 'Messages load failed.');
+        
+        if (!res.ok) throw new Error(data.message || 'Messages load failed.');
+
+        renderNotifications(data.notifications || []);
+        renderConversation(data.messages || []);
+    } catch (err) {
+        console.error('Messages load error:', err);
+        const notificationList = document.getElementById('notificationList');
+        const conversationList = document.getElementById('conversationList');
+        if (notificationList) notificationList.innerHTML = '<p style="color:#dc2626;">Failed to load notifications.</p>';
+        if (conversationList) conversationList.innerHTML = '<p style="color:#dc2626;">Failed to load conversation.</p>';
+    }
+}
+
+function renderNotifications(notifications) {
+    const list = document.getElementById('notificationList');
+    if (!list) return;
+
+    if (!Array.isArray(notifications) || notifications.length === 0) {
+        list.innerHTML = '<p style="color:#6b7280;">No notifications yet.</p>';
+        return;
+    }
+
+    list.innerHTML = notifications.map(item => `
+        <div class="mini-item">
+            <strong>Admin Reply</strong>
+            <div>${item.text || 'You have a new update.'}</div>
+            <small style="color:#6b7280;">${new Date(item.repliedAt || Date.now()).toLocaleString()}</small>
+        </div>
+    `).join('');
+}
+
+function renderConversation(messages) {
+    const list = document.getElementById('conversationList');
+    if (!list) return;
+
+    if (!Array.isArray(messages) || messages.length === 0) {
+        list.innerHTML = '<p style="color:#6b7280;">No conversation yet.</p>';
+        return;
+    }
+
+    list.innerHTML = messages.map(msg => `
+        <div class="mini-item">
+            <div style="margin-bottom:6px;"><strong>You:</strong> ${msg.content || ''}</div>
+            <div style="margin-bottom:6px;"><strong>Admin:</strong> ${msg.reply || 'No reply yet.'}</div>
+            <small style="color:#6b7280;">${new Date(msg.createdAt || Date.now()).toLocaleString()}</small>
+        </div>
+    `).join('');
+}
+
+async function sendCommentToAdmin() {
+    const input = document.getElementById('adminCommentInput');
+    const button = document.getElementById('sendCommentBtn');
+    const statusEl = document.getElementById('commentStatus');
+    const content = (input?.value || '').trim();
+    const studentName =
+        sessionStorage.getItem('userName') ||
+        localStorage.getItem('currentUser') ||
+        'Student';
+
+    if (!content) {
+        statusEl.style.color = '#dc2626';
+        statusEl.innerText = 'Please write a comment first.';
+        return;
+    }
+
+    try {
+        button.disabled = true;
+        button.innerText = 'Sending...';
+
+        const res = await fetchWithApiFallback('/api/user/messages', {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ content, studentName })
+        });
+        const data = await readApiResponse(res, 'Comment send failed.');
+        if (!res.ok) throw new Error(data.message || 'Comment send failed.');
+
+        statusEl.style.color = '#166534';
+        statusEl.innerText = data.message || 'Comment sent.';
+        input.value = '';
+        loadMessages();
+    } catch (err) {
+        statusEl.style.color = '#dc2626';
+        statusEl.innerText = err.message || 'Comment send failed.';
+    } finally {
+        button.disabled = false;
+        button.innerText = 'Send Comment';
+    }
+}
+
+async function markNotificationsRead() {
+    try {
+        const res = await fetchWithApiFallback('/api/user/messages/mark-read', {
+            method: 'PUT',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' })
+        });
+        const data = await readApiResponse(res, 'Failed to mark notifications.');
+        if (!res.ok) throw new Error(data.message || 'Failed to mark notifications.');
+        loadMessages();
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+// ===== 10. TRANSLATE PAGE =====
+function setGoogleTranslateCookie(lang) {
+    const value = `/en/${lang}`;
+    const oneYear = 365 * 24 * 60 * 60;
+    document.cookie = `googtrans=${value}; path=/; max-age=${oneYear}`;
+    document.cookie = `googtrans=${value}; domain=.${location.hostname}; path=/; max-age=${oneYear}`;
+}
+
+function getSavedGoogleTranslateLang() {
+    const match = document.cookie.match(/(?:^|;\s*)googtrans=\/[^/]+\/([^;]+)/);
+    return match ? match[1] : 'en';
+}
+
+function applyOromoStaticTranslations() {
+    const translations = [
+        ['.translator-label', 'Language', 'Afaan'],
+        ['#logoutBtn', 'Logout', 'Ba\'i'],
+        ['.sidebar a[href="#about"] span', "About Jema'aa", "Waa'ee Jema'aa"],
+        ['.sidebar a[href="#prayer"] span', 'Prayer Times', 'Yeroo Salaata'],
+        ['.sidebar a[href="#library"] span', 'Digital Library', 'Mana Kitaabaa Dijitaalaa'],
+        ['.sidebar a[href="#stats"] span', 'Statistics', 'Istaatistiksii'],
+        ['.sidebar a[href="#roadmap"] span', 'Qirath Roadmap', 'Karoora Qiraa\'aa'],
+        ['.sidebar a[href="#messages"] span', 'Messages', 'Ergaa'],
+        ['.sidebar a[href="#account"] span', 'My Account', 'Akkaawuntii Koo'],
+        ['.sidebar a[href="#contact"] span', 'Contact', 'Nu Quunnamaa'],
+        ['#about .section-header h1', 'About AUWCMSJ', 'Waa\'ee AUWCMSJ'],
+        ['#prayer .section-header h1', 'Prayer Times', 'Yeroo Salaata'],
+        ['#library .library-header h1', 'Digital Library', 'Mana Kitaabaa Dijitaalaa'],
+        ['#stats .section-header h1', "Jema'aa Statistics", "Istaatistiksii Jema'aa"],
+        ['#roadmap .section-header h1', 'Qirath Progress Update', 'Fooyya\'insa Qiraa\'aa'],
+        ['#messages .section-header h1', 'Messages', 'Ergaa'],
+        ['#account .section-header h1', 'My Account', 'Akkaawuntii Koo'],
+        ['#roadmap h3', 'Submit Your Progress', 'Fooyya\'insa Kee Ergi'],
+        ['#roadmap label', 'Select Level:', 'Sadarkaa Filadhu:'],
+        ['#submitBtn', 'Send to Admin', 'Geggeessaa Ergi'],
+        ['#messages #messageList p', 'Loading messages...', 'Ergaan fe\'amaa jira...'],
+        ['#account h3', 'Upload Profile Photo', 'Suuraa Piroofaayilii Olkaa\'i'],
+        ['#profileUploadBtn', 'Upload Photo', 'Suuraa Olkaa\'i'],
+        ['#account h3', 'Change Password', 'Jecha Iccitii Jijjiiri'],
+        ['#changePasswordBtn', 'Change Password', 'Jecha Iccitii Jijjiiri'],
+        ['#account h3', 'Delete Profile Photo', 'Suuraa Piroofaayilii Haqi'],
+        ['#deletePhotoBtn', 'Delete Profile Photo', 'Suuraa Piroofaayilii Haqi'],
+        ['.footer-col a[href="#prayer"]', 'Prayer Times', 'Yeroo Salaata'],
+        ['.footer-col a[href="#library"]', 'Digital Library', 'Mana Kitaabaa Dijitaalaa'],
+        ['.footer-col a[href="#stats"]', 'Statistics', 'Istaatistiksii'],
+        ['.footer-col a[href="#roadmap"]', 'Qirath Roadmap', 'Karoora Qiraa\'aa'],
+        ['.footer-col a[href="#about"]', 'About Us', 'Waa\'ee Keenya']
+    ];
+
+    translations.forEach(([selector, enText, omText]) => {
+        document.querySelectorAll(selector).forEach((el) => {
+            const current = (el.textContent || '').trim();
+            if (current === enText) {
+                el.textContent = omText;
+            }
+        });
+    });
+}
+
+function applySelectedLanguage(lang) {
+    if (lang === 'om') {
+        // Custom Oromo mode for key static UI texts.
+        setGoogleTranslateCookie('en');
+        localStorage.setItem('preferredLanguage', 'om');
+        applyOromoStaticTranslations();
+        return;
+    }
+
+    setGoogleTranslateCookie(lang);
+    localStorage.setItem('preferredLanguage', lang);
+    window.location.reload();
+}
+
+function googleTranslateElementInit() {
+    new google.translate.TranslateElement(
+        {
+            pageLanguage: 'en',
+            includedLanguages: 'en,am,ar,om',
+            autoDisplay: false,
+            layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+        },
+        'google_translate_element'
+    );
+
+    const languageDropdown = document.getElementById('languageDropdown');
+    if (!languageDropdown) return;
+
+    // Keep selector synced to the current translated language.
+    const savedLang = localStorage.getItem('preferredLanguage') || getSavedGoogleTranslateLang();
+    languageDropdown.value = ['en', 'am', 'ar', 'om'].includes(savedLang) ? savedLang : 'en';
+    if (savedLang === 'om') {
+        applyOromoStaticTranslations();
+    }
+
+    // Re-apply through cookie + reload (more reliable than hidden widget select events).
+    languageDropdown.addEventListener('change', () => {
+        const selectedLang = languageDropdown.value || 'en';
+        applySelectedLanguage(selectedLang);
+    });
+}
+
+window.googleTranslateElementInit = googleTranslateElementInit;
+
+(function syncSavedLanguagePreference() {
+    const preferredLang = localStorage.getItem('preferredLanguage');
+    if (preferredLang) {
+        setGoogleTranslateCookie(preferredLang === 'om' ? 'en' : preferredLang);
+    }
+})();
+
+(function loadGoogleTranslateScript() {
+    if (document.getElementById('googleTranslateScript')) return;
+    const script = document.createElement('script');
+    script.id = 'googleTranslateScript';
+    script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+    script.async = true;
+    document.head.appendChild(script);
+})();
+
+// ===== 11. DELETE PROFILE PHOTO =====
 async function deleteProfilePhoto() {
     const msg = document.getElementById('deletePhotoMsg');
     const button = document.getElementById('deletePhotoBtn');
@@ -1325,9 +1727,18 @@ async function deleteProfilePhoto() {
         msg.style.color = '#92400e';
         msg.innerText = 'Deleting profile photo...';
 
-        // Get current user info
-        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-        const studentId = currentUser.studentId || sessionStorage.getItem('userName');
+        // Get current user info safely (supports both object JSON and plain string values)
+        const currentUserRaw = localStorage.getItem('currentUser') || '';
+        let parsedCurrentUser = {};
+        try {
+            parsedCurrentUser = currentUserRaw ? JSON.parse(currentUserRaw) : {};
+        } catch {
+            parsedCurrentUser = {};
+        }
+        const studentId =
+            parsedCurrentUser.studentId ||
+            sessionStorage.getItem('userName') ||
+            currentUserRaw;
 
         // Call delete profile photo endpoint
         const res = await fetchWithApiFallback('/api/user/delete-profile-photo', {
@@ -1387,7 +1798,7 @@ function logout(e) {
 
 // --- ADMIN VIEW FUNCTIONS ---
 function returnToAdminView() {
-    const returnUrl = sessionStorage.getItem('adminReturnUrl') || 'admin.html';
+    const returnUrl = sessionStorage.getItem('adminReturnUrl') || '../admin/admin.html';
     sessionStorage.removeItem('isAdminView');
     sessionStorage.removeItem('adminReturnUrl');
     window.location.href = returnUrl;
