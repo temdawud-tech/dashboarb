@@ -6,6 +6,7 @@
     <title>AUWC - Registration Success</title>
     <style>
         /* 1. Background & Layout */
+        html { -webkit-text-size-adjust: 100%; }
         body {
             background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
             display: flex;
@@ -15,6 +16,7 @@
             margin: 0;
             font-family: 'Segoe UI', Tahoma, sans-serif;
             padding: 15px;
+            overflow-x: hidden;
         }
 
         /* 2. Success Card */
@@ -116,6 +118,15 @@
             0% { transform: scale(1); }
             50% { transform: scale(1.1); }
             100% { transform: scale(1); }
+        }
+
+        @media (max-width: 768px) {
+            .success-card {
+                max-width: 100%;
+            }
+            .footer-links {
+                flex-wrap: wrap;
+            }
         }
 
         @media (max-width: 480px) {

@@ -9,8 +9,13 @@
     <style>
         /* --- 1. GLOBAL STYLES --- */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        html { scroll-behavior: smooth; }
-        body {background-color: white; display: flex; flex-direction: column; min-height: 100vh; }
+        html {
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
+            scroll-padding-top: 200px;
+        }
+        body { background-color: white; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+        img { max-width: 100%; height: auto; }
         :root { --primary: #1b5e20; }
 
         /* --- 2. HEADER WITH DAILY AYAH & PROFILE --- */
@@ -38,9 +43,23 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 10px;
             position: absolute;
             top: 15px;
             padding: 0 25px;
+            box-sizing: border-box;
+        }
+
+        #adminReturnBtn {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        #adminReturnBtn button {
+            max-width: 100%;
+            font-size: 0.8rem;
+            padding: 7px 12px;
         }
 
         .logo-menu-container {
@@ -49,6 +68,7 @@
             align-items: flex-start;
             gap: 10px;
             flex: 1;
+            min-width: 0;
         }
 
         .header-logo { display: flex; align-items: center; gap: 10px; }
@@ -219,12 +239,7 @@
 
         .card h3 { font-size: 1.2rem; margin-bottom: 12px; font-weight: 700; }
         .card p { font-size: 0.9rem; color: #666; line-height: 1.6; }
-         @media (max-width: 768px) {
-            .main-content { padding: 250px 20px 20px; }
-            .top-nav { height: 180px; }
-            .ayah-content h2 { font-size: 1.5rem; }
-        }
-        
+
         /* --- PRAYER TIMES STYLES --- */
         .prayer-container {background: hsl(207, 15%, 88%);  padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: center; }
         .prayer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; margin-top: 20px; }
@@ -259,11 +274,11 @@
         .footer-bottom { text-align: center; padding-top: 30px; margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.8rem; color: rgba(255,255,255,0.5); }
 
         @media (max-width: 768px) {
-            .main-content { padding: 225px 20px 20px; }
             .username { display: none; }
             .roadmap-track { flex-direction: column; gap: 30px; }
             .roadmap-track::before { display: none; }
         }
+
  /* User section hunda mirga gubbaatti hiriirsuuf */
 .user-profile-wrapper {
     position: absolute; /* Header keessatti mirgatti dhiibuuf */
@@ -324,6 +339,8 @@
     font-size: 11px;
     color: #1b5e20;
     width: 170px;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .translator-widget .translator-label {
@@ -569,6 +586,35 @@
     font-size: 0.86rem;
 }
 
+.mini-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.msg-delete-btn {
+    flex-shrink: 0;
+    padding: 5px 12px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    background: #fee2e2;
+    color: #b91c1c;
+    cursor: pointer;
+}
+
+.msg-delete-btn:hover {
+    background: #fecaca;
+}
+
+.msg-delete-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
 @media (max-width: 992px) {
     .top-nav {
         height: 220px;
@@ -601,17 +647,35 @@
 }
 
 @media (max-width: 768px) {
+    html {
+        scroll-padding-top: 110px;
+    }
+
     .top-nav {
-        height: 255px;
+        height: auto;
+        min-height: 220px;
+        padding-bottom: 16px;
     }
 
     .header-top-row {
-        top: 12px;
-        padding: 0 12px;
+        position: relative;
+        top: auto;
+        padding: 12px 12px 0;
+        justify-content: flex-start;
     }
 
     .header-logo h3 {
         font-size: 1rem;
+    }
+
+    #adminReturnBtn {
+        width: 100%;
+        flex-basis: 100%;
+    }
+
+    #adminReturnBtn button {
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .logopic {
@@ -624,7 +688,7 @@
     }
 
     .ayah-content {
-        margin-top: 56px;
+        margin-top: 8px;
         padding: 14px 12px;
         border-radius: 12px;
     }
@@ -649,11 +713,12 @@
     }
 
     .main-content {
-        padding: 285px 14px 20px;
+        padding: 248px 14px 24px;
     }
 
     .section {
         margin-bottom: 40px;
+        scroll-margin-top: 100px;
     }
 
     .section-header {
@@ -714,11 +779,19 @@
     .footer-col h4 {
         margin-bottom: 14px;
     }
+
+    .message-center-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 480px) {
+    html {
+        scroll-padding-top: 96px;
+    }
+
     .top-nav {
-        height: 280px;
+        min-height: 240px;
     }
 
     .sidebar {
@@ -728,7 +801,26 @@
     }
 
     .main-content {
-        padding: 308px 10px 18px;
+        padding: 268px 10px 18px;
+    }
+
+    .header-logo h3 {
+        font-size: 0.95rem;
+        line-height: 1.25;
+        max-width: 52vw;
+        word-break: break-word;
+    }
+
+    .translator-widget {
+        width: 100%;
+    }
+
+    .user-profile-wrapper {
+        align-items: stretch;
+        width: 100%;
+        max-width: 280px;
+        margin-left: auto;
+        margin-right: auto;
     }
 
     .section-header {
@@ -741,8 +833,19 @@
     }
 
     #newsDisplay {
+        word-break: break-word;
+        overflow-wrap: anywhere;
         font-size: 0.92rem;
         padding: 12px;
+    }
+
+    .mini-item-header {
+        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+
+    .message-center-grid {
+        grid-template-columns: 1fr;
     }
 
     .prayer-grid {
@@ -1083,14 +1186,23 @@ function getAuthHeaders(extraHeaders = {}) {
 
 async function readApiResponse(res, fallbackMessage) {
     const raw = await res.text();
+    const trimmed = (raw || '').trim();
+
+    const looksLikeHtml =
+        trimmed.startsWith('<!DOCTYPE') ||
+        trimmed.startsWith('<!doctype') ||
+        trimmed.startsWith('<html');
+
+    if (looksLikeHtml) {
+        throw new Error(
+            'The server sent a web page instead of JSON. Another app may be using port 5000, or the browser is not talking to AUWCMSJ (node server.js). Close anything else on port 5000 and restart the backend, then reload this page.'
+        );
+    }
 
     try {
-        return raw ? JSON.parse(raw) : {};
+        return trimmed ? JSON.parse(trimmed) : {};
     } catch {
-        if (raw && raw.trim().startsWith('<!DOCTYPE')) {
-            throw new Error('Server returned HTML instead of JSON. Restart the Node server and log in again.');
-        }
-        throw new Error(raw || fallbackMessage);
+        throw new Error(trimmed || fallbackMessage);
     }
 }
 
@@ -1098,10 +1210,29 @@ async function readApiResponse(res, fallbackMessage) {
 window.addEventListener("DOMContentLoaded", () => {
     const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
     const role = sessionStorage.getItem('role');
+    const adminViewingAsUser = sessionStorage.getItem('isAdminView') === 'true';
 
-    if (!isLoggedIn || role !== 'student') {
+    if (!isLoggedIn) {
         window.location.href = "login.html";
         return;
+    }
+
+    const isStudent = role === 'student';
+    const isAdminPreview = role === 'admin' && adminViewingAsUser;
+
+    if (role === 'admin' && !adminViewingAsUser) {
+        window.location.href = "../admin/admin.html";
+        return;
+    }
+
+    if (!isStudent && !isAdminPreview) {
+        window.location.href = "login.html";
+        return;
+    }
+
+    const adminReturnBtn = document.getElementById('adminReturnBtn');
+    if (adminReturnBtn && adminViewingAsUser) {
+        adminReturnBtn.style.display = 'block';
     }
 
     setUser();
@@ -1520,6 +1651,12 @@ function renderNotifications(notifications) {
     `).join('');
 }
 
+function escapeConversationHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text == null ? '' : String(text);
+    return div.innerHTML;
+}
+
 function renderConversation(messages) {
     const list = document.getElementById('conversationList');
     if (!list) return;
@@ -1529,13 +1666,45 @@ function renderConversation(messages) {
         return;
     }
 
-    list.innerHTML = messages.map(msg => `
+    list.innerHTML = messages.map(msg => {
+        const id = String(msg._id || '');
+        const dateStr = escapeConversationHtml(new Date(msg.createdAt || Date.now()).toLocaleString());
+        const youLine = escapeConversationHtml(msg.content || '');
+        const adminLine = escapeConversationHtml(msg.reply || 'No reply yet.');
+        return `
         <div class="mini-item">
-            <div style="margin-bottom:6px;"><strong>You:</strong> ${msg.content || ''}</div>
-            <div style="margin-bottom:6px;"><strong>Admin:</strong> ${msg.reply || 'No reply yet.'}</div>
-            <small style="color:#6b7280;">${new Date(msg.createdAt || Date.now()).toLocaleString()}</small>
-        </div>
-    `).join('');
+            <div class="mini-item-header">
+                <small style="color:#6b7280;">${dateStr}</small>
+                <button type="button" class="msg-delete-btn" data-msg-id="${id}" title="Remove this thread from your view">Delete</button>
+            </div>
+            <div style="margin-bottom:6px;"><strong>You:</strong> ${youLine}</div>
+            <div style="margin-bottom:6px;"><strong>Admin:</strong> ${adminLine}</div>
+        </div>`;
+    }).join('');
+
+    list.querySelectorAll('.msg-delete-btn').forEach(btn => {
+        btn.addEventListener('click', () => deleteConversationMessage(btn.getAttribute('data-msg-id'), btn));
+    });
+}
+
+async function deleteConversationMessage(messageId, buttonEl) {
+    if (!messageId) return;
+    if (!confirm('Delete this message from your conversation? This cannot be undone.')) return;
+
+    try {
+        if (buttonEl) buttonEl.disabled = true;
+        const res = await fetchWithApiFallback('/api/user/messages/delete', {
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ messageId })
+        });
+        const data = await readApiResponse(res, 'Delete failed.');
+        if (!res.ok) throw new Error(data.message || 'Delete failed.');
+        await loadMessages();
+    } catch (err) {
+        alert(err.message || 'Could not delete message.');
+        if (buttonEl) buttonEl.disabled = false;
+    }
 }
 
 async function sendCommentToAdmin() {
@@ -1727,39 +1896,13 @@ async function deleteProfilePhoto() {
         msg.style.color = '#92400e';
         msg.innerText = 'Deleting profile photo...';
 
-        // Get current user info safely (supports both object JSON and plain string values)
-        const currentUserRaw = localStorage.getItem('currentUser') || '';
-        let parsedCurrentUser = {};
-        try {
-            parsedCurrentUser = currentUserRaw ? JSON.parse(currentUserRaw) : {};
-        } catch {
-            parsedCurrentUser = {};
-        }
-        const studentId =
-            parsedCurrentUser.studentId ||
-            sessionStorage.getItem('userName') ||
-            currentUserRaw;
-
-        // Call delete profile photo endpoint
         const res = await fetchWithApiFallback('/api/user/delete-profile-photo', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ studentId })
+            method: 'POST',
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({})
         });
 
-        // Handle response properly
-        const responseText = await res.text();
-        console.log('Delete photo response:', responseText);
-        
-        let data;
-        try {
-            data = responseText ? JSON.parse(responseText) : {};
-        } catch (parseError) {
-            console.error('JSON parse error:', parseError, 'Response text:', responseText);
-            // If JSON parsing fails, treat the response as a plain message
-            data = { message: responseText || 'Profile photo deletion completed' };
-        }
-
+        const data = await readApiResponse(res, 'Failed to delete profile photo.');
         if (!res.ok) {
             throw new Error(data.message || 'Failed to delete profile photo');
         }
@@ -1803,13 +1946,6 @@ function returnToAdminView() {
     sessionStorage.removeItem('adminReturnUrl');
     window.location.href = returnUrl;
 }
-
-// Check if user is admin and show return button
-document.addEventListener('DOMContentLoaded', function() {
-    if (sessionStorage.getItem('isAdminView') === 'true') {
-        document.getElementById('adminReturnBtn').style.display = 'block';
-    }
-});
 
 </script>
 </body>

@@ -8,14 +8,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-        
+        html { -webkit-text-size-adjust: 100%; }
+
         body {
             background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
-            display: flex; 
-            justify-content: center; 
+            display: flex;
+            justify-content: center;
             align-items: center;
-            min-height: 100vh; 
+            min-height: 100vh;
             padding: 20px;
+            overflow-x: hidden;
         }
 
         /* FIXED: Wrapped your properties into the correct selector */
@@ -59,6 +61,13 @@
 
         .signup-text { font-size: 13px; color: #64748b; }
         .signup-text a { color: #059669; text-decoration: none; font-weight: 700; }
+
+        @media (max-width: 768px) {
+            .login-card {
+                max-width: 100%;
+                padding: 28px 22px;
+            }
+        }
 
         @media (max-width: 480px) {
             body {
@@ -147,11 +156,22 @@ async function handleLogin(event) {
     loginBtn.disabled = true;
 
     try {
-        const res = await fetch('http://localhost:5000/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ studentId, password })
-        });
+        const apiBases = ['http://127.0.0.1:5000', 'http://localhost:5000'];
+        let res = null;
+        let lastFetchErr = null;
+        for (const base of apiBases) {
+            try {
+                res = await fetch(`${base}/api/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ studentId, password })
+                });
+                break;
+            } catch (e) {
+                lastFetchErr = e;
+            }
+        }
+        if (!res) throw lastFetchErr || new Error('Cannot reach API');
 
         const data = await res.json();
 
@@ -183,7 +203,7 @@ async function handleLogin(event) {
 
             // Gara Dashboard-itti dabarsuu
             if (data.role === 'admin') {
-                window.location.href = 'index.html';
+                window.location.href = '../admin/admin.html';
             } else {
                 window.location.href = 'userdashboard.html';
             }

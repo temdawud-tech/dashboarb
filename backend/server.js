@@ -408,6 +408,39 @@ app.put('/api/user/messages/mark-read', authenticateToken, async (req, res) => {
     }
 });
 
+async function deleteOwnedUserMessage(req, res) {
+    try {
+        const studentId = String(req.user?.studentId || '').trim();
+        const messageId = String(req.params.messageId || req.body?.messageId || '').trim();
+
+        if (!studentId || !messageId) {
+            return res.status(400).json({ message: 'Message ID is required.' });
+        }
+        if (!mongoose.Types.ObjectId.isValid(messageId)) {
+            return res.status(400).json({ message: 'Invalid message ID.' });
+        }
+
+        const deleted = await Message.findOneAndDelete({
+            _id: messageId,
+            studentId
+        });
+
+        if (!deleted) {
+            return res.status(404).json({ message: 'Message not found or access denied.' });
+        }
+
+        res.json({ message: 'Message deleted.' });
+    } catch (err) {
+        console.error('deleteOwnedUserMessage:', err);
+        res.status(500).json({ message: 'Message could not be deleted.' });
+    }
+}
+
+// POST avoids DELETE being blocked or rewritten by proxies/browser extensions returning HTML pages.
+app.post('/api/user/messages/delete', authenticateToken, deleteOwnedUserMessage);
+
+app.delete('/api/user/messages/:messageId', authenticateToken, deleteOwnedUserMessage);
+
 // ADMIN message endpoints (for admin dashboard integration/future use)
 app.get('/api/admin/messages', async (req, res) => {
     try {
@@ -483,13 +516,24 @@ res.status(500).json({ message: "Ragaa fiduun hin danda'amne" });
 // 2. Barataa balleessuuf (Delete)
 app.delete('/api/admin/delete/:id', async (req, res) => {
 try {
-const studentId = req.params.id;
-const deletedUser = await User.findOneAndDelete({ studentId: studentId });
+const rawId = decodeURIComponent(String(req.params.id || '')).trim();
+if (!rawId) {
+return res.status(400).json({ message: "Student ID is required." });
+}
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const idRegex = new RegExp(`^${escapeRegex(rawId)}$`, 'i');
+
+const deletedUser = await User.findOneAndDelete({
+$or: [
+{ studentId: rawId },
+{ studentId: idRegex }
+]
+});
 
 if (!deletedUser) {
 return res.status(404).json({ message: "Barataan hin argamne" });
 }
-res.json({ message: "Barataa ID " + studentId + " qabu haqameera!" });
+res.json({ message: "Barataa ID " + deletedUser.studentId + " qabu haqameera!" });
 } catch (err) {
 res.status(500).json({ message: "Haqqii irratti rakkoon uumame" });
 }
@@ -711,42 +755,29 @@ app.delete('/api/progress/:index', (req, res) => {
     }
 });
 
-// Delete user profile photo endpoint
-app.delete('/api/user/delete-profile-photo', async (req, res) => {
+async function deleteProfilePhotoHandler(req, res) {
     try {
-        console.log('Delete profile photo request received:', req.body);
-        const { studentId } = req.body;
-
+        const studentId = String(req.user?.studentId || '').trim();
         if (!studentId) {
-            console.log('Student ID missing');
             return res.status(400).json({ message: "Student ID is required." });
         }
 
-        console.log('Looking for user with studentId:', studentId.trim());
-        // Find the user
-        const user = await User.findOne({ studentId: studentId.trim() });
-        
+        const user = await User.findOne({ studentId });
         if (!user) {
-            console.log('User not found');
             return res.status(404).json({ message: "User not found." });
         }
 
-        console.log('User found, deleting profile photo...');
-        // Remove profile photo from user record
-        await User.updateOne(
-            { studentId: studentId.trim() },
-            { $unset: { profilePic: 1 } }
-        );
-
-        console.log('Profile photo deleted, sending response');
-        const response = { message: "Profile photo deleted successfully." };
-        console.log('Sending JSON response:', response);
-        res.json(response);
+        await User.updateOne({ studentId }, { $unset: { profilePic: 1 } });
+        res.json({ message: "Profile photo deleted successfully." });
     } catch (err) {
         console.error("Profile photo deletion error:", err);
         res.status(500).json({ message: "Error deleting profile photo: " + err.message });
     }
-});
+}
+
+// POST avoids DELETE quirks (proxies/HTML responses). Auth uses JWT studentId — not request body.
+app.post('/api/user/delete-profile-photo', authenticateToken, deleteProfilePhotoHandler);
+app.delete('/api/user/delete-profile-photo', authenticateToken, deleteProfilePhotoHandler);
 
 // Change user role endpoint
 app.put('/api/admin/change-role', async (req, res) => {

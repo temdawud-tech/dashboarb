@@ -6,10 +6,12 @@
     <title>Step 2: Emergency & Family Contacts</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        html { -webkit-text-size-adjust: 100%; }
         body {
             background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
             display: flex; justify-content: center; align-items: center;
             min-height: 100vh; padding: 20px;
+            overflow-x: hidden;
         }
         .form-card {
             background: rgba(255, 255, 255, 0.9);
@@ -40,6 +42,13 @@
 
         .btn-back:hover { background: #475569; }
         .btn-next:hover { background: #047857; }
+
+        @media (max-width: 768px) {
+            .form-card {
+                max-width: 100%;
+                padding: 24px 16px;
+            }
+        }
 
         @media (max-width: 480px) {
             body {

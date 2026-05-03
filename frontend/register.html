@@ -1,4 +1,4 @@
-6<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="om">
 <head>
     <meta charset="UTF-8">
@@ -8,10 +8,12 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
 
+        html { -webkit-text-size-adjust: 100%; }
         body {
             background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
             display: flex; justify-content: center; align-items: center;
             min-height: 100vh; padding: 20px;
+            overflow-x: hidden;
         }
 
         .form-card {
@@ -55,6 +57,13 @@
         .btn-next { background: #065f46; color: white; flex: 2; }
         .btn:hover { opacity: 0.9; transform: translateY(-2px); }
         .btn:disabled { background: #ccc; cursor: not-allowed; }
+
+        @media (max-width: 768px) {
+            .form-card {
+                max-width: 100%;
+                padding: 28px 18px;
+            }
+        }
 
         @media (max-width: 480px) {
             body {

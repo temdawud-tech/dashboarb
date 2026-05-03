@@ -5,10 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AUWC - Skills & Contribution</title>
     <style>
+        * { box-sizing: border-box; }
+        html { -webkit-text-size-adjust: 100%; }
         body {
             background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
             display: flex; justify-content: center; align-items: center;
             min-height: 100vh; margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px;
+            overflow-x: hidden;
         }
 
         .form-card {
@@ -47,6 +50,12 @@
         .btn-next { background: #065f46; color: white; }
 
         .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        @media (max-width: 768px) {
+            .form-card {
+                max-width: 100%;
+            }
+        }
 
         @media (max-width: 480px) {
             body {
